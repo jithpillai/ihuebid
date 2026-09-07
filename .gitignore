@@ -1,0 +1,18 @@
+# Dependencies and Next.js outputs
+node_modules/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+src/generated/prisma/
+
+# Local environment and platform metadata
+.env
+.env.local
+.env.*.local
+.vercel/
+
+# Logs and OS files
+*.log
+.DS_Store

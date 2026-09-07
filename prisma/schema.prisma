@@ -1,0 +1,286 @@
+generator client {
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  extensions = [pg_trgm]
+}
+
+// --- Enums -----------------------------------------------------------------
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum ExternalIdentityProvider {
+  GOOGLE
+}
+
+enum OtpPurpose {
+  SIGN_IN
+}
+
+enum VerificationStatus {
+  NONE
+  MANUAL_VERIFIED
+}
+
+enum ListingStatus {
+  DRAFT
+  SCHEDULED
+  LIVE
+  PAUSED
+  CLOSED
+  CANCELLED
+}
+
+enum ListingCategory {
+  USED_VEHICLE
+  // Free-text type via Listing.customType, for future categories that don't
+  // yet have a dedicated template.
+  OTHER
+}
+
+enum OwnerPriceVisibility {
+  VISIBLE
+  HIDDEN_UNTIL_RESPONSE
+  NOT_SUPPLIED
+}
+
+enum EmbedProvider {
+  YOUTUBE
+}
+
+// --- Identity ----------------------------------------------------------------
+
+model User {
+  id              String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email           String     @unique @db.VarChar(320)
+  emailVerifiedAt DateTime?  @map("email_verified_at") @db.Timestamptz(3)
+  displayName     String     @map("display_name") @db.VarChar(120)
+  status          UserStatus @default(ACTIVE)
+  role            UserRole   @default(USER)
+  createdAt       DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  profile            UserProfile?
+  sessions           Session[]
+  externalIdentities ExternalIdentity[]
+  listings           Listing[]
+
+  @@map("users")
+}
+
+model UserProfile {
+  id                 String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId             String              @unique @map("user_id") @db.Uuid
+  handle             String?             @unique @db.VarChar(40)
+  bio                String?             @db.Text
+  location           String?             @db.VarChar(200)
+  links              Json?
+  verificationStatus VerificationStatus  @default(NONE) @map("verification_status")
+  avatarPublicId     String?             @map("avatar_public_id") @db.VarChar(400)
+  createdAt          DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_profiles")
+}
+
+model ExternalIdentity {
+  id              String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          String                   @map("user_id") @db.Uuid
+  provider        ExternalIdentityProvider
+  providerSubject String                   @map("provider_subject") @db.VarChar(255)
+  emailAtLink     String                   @map("email_at_link") @db.VarChar(320)
+  createdAt       DateTime                 @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerSubject])
+  @@index([userId, provider])
+  @@map("external_identities")
+}
+
+model OtpChallenge {
+  id                String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  normalizedEmail   String     @map("normalized_email") @db.VarChar(320)
+  purpose           OtpPurpose
+  codeHash          String     @map("code_hash") @db.VarChar(128)
+  attemptCount      Int        @default(0) @map("attempt_count")
+  maxAttempts       Int        @default(5) @map("max_attempts")
+  expiresAt         DateTime   @map("expires_at") @db.Timestamptz(3)
+  resendAvailableAt DateTime   @map("resend_available_at") @db.Timestamptz(3)
+  consumedAt        DateTime?  @map("consumed_at") @db.Timestamptz(3)
+  requestIpHash     String?    @map("request_ip_hash") @db.VarChar(128)
+  createdAt         DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([normalizedEmail, purpose, createdAt])
+  @@index([expiresAt])
+  @@map("otp_challenges")
+}
+
+model Session {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  tokenHash  String    @unique @map("token_hash") @db.VarChar(128)
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz(3)
+  lastSeenAt DateTime  @default(now()) @map("last_seen_at") @db.Timestamptz(3)
+  revokedAt  DateTime? @map("revoked_at") @db.Timestamptz(3)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@index([expiresAt, revokedAt])
+  @@map("sessions")
+}
+
+// --- Listings ----------------------------------------------------------------
+
+model Listing {
+  id                   String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  // Short, app-generated, URL-safe id used in public listing URLs
+  // (bid.ihue.in/{handle}/{publicId}). Deliberately not the internal UUID:
+  // internal ids must never appear in public URLs (requirements §5).
+  publicId             String               @unique @map("public_id") @db.VarChar(16)
+  slug                 String?              @db.VarChar(200)
+  creatorId            String               @map("creator_id") @db.Uuid
+  title                String               @db.VarChar(200)
+  category             ListingCategory
+  customType           String?              @map("custom_type") @db.VarChar(120)
+  description          String?              @db.Text
+  locationText         String?              @map("location_text") @db.VarChar(300)
+  currency             String               @db.VarChar(3)
+  ownerExpectedPrice   Decimal?             @map("owner_expected_price") @db.Decimal(14, 2)
+  ownerPriceVisibility OwnerPriceVisibility @default(NOT_SUPPLIED) @map("owner_price_visibility")
+  responseMin          Decimal              @map("response_min") @db.Decimal(14, 2)
+  responseMax          Decimal              @map("response_max") @db.Decimal(14, 2)
+  responseIncrement    Decimal              @map("response_increment") @db.Decimal(14, 2)
+  timeZone             String               @map("time_zone") @db.VarChar(60)
+  publishAt            DateTime?            @map("publish_at") @db.Timestamptz(3)
+  closeAt              DateTime?            @map("close_at") @db.Timestamptz(3)
+  status               ListingStatus        @default(DRAFT)
+  disclosureText       String?              @map("disclosure_text") @db.Text
+  createdAt            DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime             @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  creator     User               @relation(fields: [creatorId], references: [id])
+  fieldValues ListingFieldValue[]
+  mediaAssets MediaAsset[]
+  embeds      ExternalEmbed[]
+  referenceLinks ReferenceLink[]
+  responses   Response[]
+
+  @@index([creatorId, status])
+  @@map("listings")
+}
+
+model ListingFieldValue {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  listingId  String   @map("listing_id") @db.Uuid
+  fieldKey   String   @map("field_key") @db.VarChar(80)
+  fieldValue String   @map("field_value") @db.Text
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@unique([listingId, fieldKey])
+  @@map("listing_field_values")
+}
+
+model MediaAsset {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  listingId String   @map("listing_id") @db.Uuid
+  publicId  String   @map("public_id") @db.VarChar(400)
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([listingId, sortOrder])
+  @@map("media_assets")
+}
+
+model ExternalEmbed {
+  id        String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  listingId String        @map("listing_id") @db.Uuid
+  provider  EmbedProvider
+  url       String        @db.VarChar(500)
+  createdAt DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([listingId])
+  @@map("external_embeds")
+}
+
+model ReferenceLink {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  listingId String   @map("listing_id") @db.Uuid
+  label     String   @db.VarChar(120)
+  url       String   @db.VarChar(500)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([listingId])
+  @@map("reference_links")
+}
+
+// --- Participant responses ----------------------------------------------------
+
+enum ResponseMode {
+  ANONYMOUS_VALUATION
+  // Reserved for the interest-opt-in and verified-offer modes (requirements
+  // §7); only ANONYMOUS_VALUATION is submittable so far.
+  INTEREST_OPT_IN
+  VERIFIED_OFFER
+}
+
+// Opaque anonymous browser identity (requirements §16), unrelated to the
+// authenticated `User`/`Session` models — a participant never needs an
+// account. Same signed-token-hash design as `Session`, deliberately
+// duplicated rather than shared: participant identity must never be
+// upgradable into platform access.
+model ParticipantIdentity {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tokenHash String   @unique @map("token_hash") @db.VarChar(128)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  responses Response[]
+
+  @@map("participant_identities")
+}
+
+model Response {
+  id                    String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  listingId             String       @map("listing_id") @db.Uuid
+  participantIdentityId String       @map("participant_identity_id") @db.Uuid
+  mode                  ResponseMode @default(ANONYMOUS_VALUATION)
+  value                 Decimal      @db.Decimal(14, 2)
+  revisionCount         Int          @default(0) @map("revision_count")
+  createdAt             DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt             DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  listing             Listing             @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  participantIdentity ParticipantIdentity @relation(fields: [participantIdentityId], references: [id], onDelete: Cascade)
+
+  // One active valuation per participant token per listing (requirements
+  // §9.1); revising updates this same row rather than inserting a new one.
+  @@unique([listingId, participantIdentityId])
+  @@index([listingId])
+  @@map("responses")
+}
