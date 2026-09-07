@@ -24,6 +24,7 @@ export type CreateListingInput = {
   currency: string;
   ownerExpectedPrice?: number;
   ownerPriceVisibility: "VISIBLE" | "HIDDEN_UNTIL_RESPONSE" | "NOT_SUPPLIED";
+  resultVisibility: "PUBLIC" | "CREATOR_ONLY";
   responseMin: number;
   responseMax: number;
   responseIncrement: number;
@@ -71,6 +72,7 @@ export async function createListing(session: SessionShape, input: CreateListingI
       currency: input.currency,
       ownerExpectedPrice: input.ownerExpectedPrice ?? null,
       ownerPriceVisibility: input.ownerPriceVisibility,
+      resultVisibility: input.resultVisibility,
       responseMin: input.responseMin,
       responseMax: input.responseMax,
       responseIncrement: input.responseIncrement,

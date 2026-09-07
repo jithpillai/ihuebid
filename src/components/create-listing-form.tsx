@@ -12,6 +12,7 @@ export function CreateListingForm() {
   const [currency, setCurrency] = useState("INR");
   const [ownerExpectedPrice, setOwnerExpectedPrice] = useState("");
   const [ownerPriceVisibility, setOwnerPriceVisibility] = useState<"VISIBLE" | "HIDDEN_UNTIL_RESPONSE" | "NOT_SUPPLIED">("NOT_SUPPLIED");
+  const [resultVisibility, setResultVisibility] = useState<"PUBLIC" | "CREATOR_ONLY">("PUBLIC");
   const [responseMin, setResponseMin] = useState("");
   const [responseMax, setResponseMax] = useState("");
   const [responseIncrement, setResponseIncrement] = useState("1000");
@@ -34,6 +35,7 @@ export function CreateListingForm() {
           currency,
           ownerExpectedPrice: ownerExpectedPrice ? Number(ownerExpectedPrice) : undefined,
           ownerPriceVisibility,
+          resultVisibility,
           responseMin: Number(responseMin),
           responseMax: Number(responseMax),
           responseIncrement: Number(responseIncrement),
@@ -132,6 +134,17 @@ export function CreateListingForm() {
               <option value="NOT_SUPPLIED">Don&rsquo;t show — not supplied</option>
               <option value="VISIBLE">Show to everyone</option>
               <option value="HIDDEN_UNTIL_RESPONSE">Hide until a participant responds</option>
+            </select>
+          </label>
+          <label className="block text-sm font-semibold text-zinc-700 sm:col-span-2">
+            Audience results visibility
+            <select
+              value={resultVisibility}
+              onChange={(event) => setResultVisibility(event.target.value as typeof resultVisibility)}
+              className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 outline-none focus:border-blue-500"
+            >
+              <option value="PUBLIC">Show consensus, range &amp; confidence to everyone</option>
+              <option value="CREATOR_ONLY">Keep the results private — only I can see them</option>
             </select>
           </label>
           <label className="block text-sm font-semibold text-zinc-700">

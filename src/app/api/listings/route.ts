@@ -25,6 +25,7 @@ export async function POST(request: Request) {
       currency: body.currency.toUpperCase(),
       ownerExpectedPrice: body.ownerExpectedPrice,
       ownerPriceVisibility: body.ownerPriceVisibility ?? "NOT_SUPPLIED",
+      resultVisibility: body.resultVisibility ?? "PUBLIC",
       responseMin: Number(body.responseMin ?? 0),
       responseMax: Number(body.responseMax ?? 0),
       responseIncrement: Number(body.responseIncrement ?? 0),

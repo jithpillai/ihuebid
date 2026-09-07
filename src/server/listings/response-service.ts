@@ -2,6 +2,7 @@ import "server-only";
 
 import { db } from "@/lib/db";
 import { AuthError } from "@/server/auth/auth-service";
+import { computeAggregate } from "@/server/listings/aggregation";
 import { snapResponseValue } from "@/server/listings/response-value";
 
 export async function submitAnonymousValuation(listingId: string, participantIdentityId: string, rawValue: number) {
@@ -37,4 +38,30 @@ export async function getAnonymousValuation(listingId: string, participantIdenti
     select: { value: true },
   });
   return response ? Number(response.value) : null;
+}
+
+// The single source of truth for "which rows count toward the aggregate" —
+// both the public listing page and the creator dashboard call this rather
+// than querying Response directly, so the ANONYMOUS_VALUATION filter can
+// never drift out of sync between the two surfaces.
+export async function getListingAggregate(listingId: string) {
+  const listing = await db.listing.findUnique({
+    where: { id: listingId },
+    select: { responseMin: true, responseMax: true, ownerExpectedPrice: true },
+  });
+  if (!listing) throw new AuthError("LISTING_NOT_FOUND", "This listing could not be found.", 404);
+
+  const responses = await db.response.findMany({
+    where: { listingId, mode: "ANONYMOUS_VALUATION" },
+    select: { value: true },
+  });
+
+  return computeAggregate(
+    responses.map((response) => Number(response.value)),
+    {
+      min: Number(listing.responseMin),
+      max: Number(listing.responseMax),
+      expectedPrice: listing.ownerExpectedPrice != null ? Number(listing.ownerExpectedPrice) : undefined,
+    },
+  );
 }

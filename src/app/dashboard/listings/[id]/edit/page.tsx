@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
+import { AggregateResult } from "@/components/aggregate-result";
 import { ListingEmbedForm } from "@/components/listing-embed-form";
 import { ListingGalleryUploader } from "@/components/listing-gallery-uploader";
 import { ListingReferenceLinks } from "@/components/listing-reference-links";
@@ -9,6 +10,7 @@ import { PublishListingButton } from "@/components/publish-listing-button";
 import { AuthError } from "@/server/auth/auth-service";
 import { getCurrentSession } from "@/server/auth/session";
 import { getListingForOwner } from "@/server/listings/listing-service";
+import { getListingAggregate } from "@/server/listings/response-service";
 import { cloudinaryImageUrl } from "@/server/media/cloudinary";
 
 export const metadata: Metadata = { title: "Edit listing", robots: { index: false, follow: false } };
@@ -31,6 +33,7 @@ export default async function EditListingPage({ params }: Props) {
   const handle = session.user.profile?.handle;
   const galleryAssets = listing.mediaAssets.map((asset) => ({ id: asset.id, url: cloudinaryImageUrl({ publicId: asset.publicId }) }));
   const canPublish = (listing.status === "DRAFT" || listing.status === "SCHEDULED") && handle;
+  const aggregate = listing.status !== "DRAFT" ? await getListingAggregate(listing.id) : null;
 
   return (
     <section className="mx-auto max-w-2xl px-5 py-16 lg:px-8">
@@ -46,6 +49,12 @@ export default async function EditListingPage({ params }: Props) {
         <Link href={`/${handle}/${listing.publicId}`} className="mt-2 inline-block text-sm font-semibold text-blue-600 hover:underline">
           View public listing →
         </Link>
+      )}
+
+      {aggregate && (
+        <div className="mt-8">
+          <AggregateResult data={aggregate} currency={listing.currency} title="Audience responses (private to you)" />
+        </div>
       )}
 
       <div className="mt-8 rounded-3xl border border-zinc-200 bg-white p-7 shadow-sm">

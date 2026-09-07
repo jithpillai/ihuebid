@@ -56,6 +56,11 @@ enum OwnerPriceVisibility {
   NOT_SUPPLIED
 }
 
+enum ResultVisibility {
+  PUBLIC
+  CREATOR_ONLY
+}
+
 enum EmbedProvider {
   YOUTUBE
 }
@@ -165,6 +170,7 @@ model Listing {
   currency             String               @db.VarChar(3)
   ownerExpectedPrice   Decimal?             @map("owner_expected_price") @db.Decimal(14, 2)
   ownerPriceVisibility OwnerPriceVisibility @default(NOT_SUPPLIED) @map("owner_price_visibility")
+  resultVisibility     ResultVisibility     @default(PUBLIC) @map("result_visibility")
   responseMin          Decimal              @map("response_min") @db.Decimal(14, 2)
   responseMax          Decimal              @map("response_max") @db.Decimal(14, 2)
   responseIncrement    Decimal              @map("response_increment") @db.Decimal(14, 2)

@@ -3,9 +3,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { AggregateResult } from "@/components/aggregate-result";
 import { ValuationForm } from "@/components/valuation-form";
 import { getListingByPublicId } from "@/server/listings/listing-service";
-import { getAnonymousValuation } from "@/server/listings/response-service";
+import { getAnonymousValuation, getListingAggregate } from "@/server/listings/response-service";
 import { usedVehicleFieldByKey } from "@/server/listings/templates/used-vehicle";
 import { cloudinaryImageUrl } from "@/server/media/cloudinary";
 import { getParticipantIdentityId } from "@/server/participant/identity-service";
@@ -48,6 +49,7 @@ export default async function PublicListingPage({ params }: Props) {
   const embed = listing.embeds[0];
   const participantIdentityId = await getParticipantIdentityId();
   const existingValuation = await getAnonymousValuation(listing.id, participantIdentityId);
+  const aggregate = listing.resultVisibility === "PUBLIC" ? await getListingAggregate(listing.id) : null;
 
   return (
     <article className="mx-auto max-w-3xl px-5 py-12 lg:px-8">
@@ -143,6 +145,12 @@ export default async function PublicListingPage({ params }: Props) {
           />
         </div>
       </div>
+
+      {aggregate && (
+        <div className="mt-6">
+          <AggregateResult data={aggregate} currency={listing.currency} showComparison={listing.ownerPriceVisibility === "VISIBLE"} />
+        </div>
+      )}
     </article>
   );
 }
