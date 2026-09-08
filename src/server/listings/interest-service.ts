@@ -18,12 +18,15 @@ export async function getStillInterestedParticipants(listingId: string) {
   });
 }
 
-export async function confirmStillInterested(token: string, shareContact: boolean) {
+// Clicking "I'm still interested" on this listing's page is itself the
+// explicit consent to share the email with this listing's creator — that's
+// the whole point of the action (requirements §7.2), not a separate choice.
+export async function confirmStillInterested(token: string) {
   const optIn = await db.notificationOptIn.findUnique({ where: { interestTokenHash: hashSessionToken(token) } });
   if (!optIn) throw new AuthError("INVALID_TOKEN", "This link is invalid or has expired.", 404);
 
   return db.notificationOptIn.update({
     where: { id: optIn.id },
-    data: { stillInterestedAt: new Date(), sharedContactWithCreator: shareContact },
+    data: { stillInterestedAt: new Date() },
   });
 }

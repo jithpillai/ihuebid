@@ -113,12 +113,12 @@ export default async function EditListingPage({ params }: Props) {
           </p>
           {listing.closureNote && <p className="mt-1 text-sm text-zinc-500">{listing.closureNote}</p>}
 
-          <h3 className="mt-6 text-xs font-black uppercase tracking-wide text-zinc-400">Still interested &amp; shared contact</h3>
-          {interested.filter((row) => row.sharedContactWithCreator).length === 0 ? (
-            <p className="mt-2 text-sm text-zinc-400">No one has shared their contact yet.</p>
+          <h3 className="mt-6 text-xs font-black uppercase tracking-wide text-zinc-400">Still interested</h3>
+          {interested.length === 0 ? (
+            <p className="mt-2 text-sm text-zinc-400">No one has confirmed interest yet.</p>
           ) : (
             <ul className="mt-2 flex flex-col gap-1">
-              {interested.filter((row) => row.sharedContactWithCreator).map((row) => (
+              {interested.map((row) => (
                 <li key={row.id} className="text-sm font-semibold text-zinc-900">{row.email}</li>
               ))}
             </ul>

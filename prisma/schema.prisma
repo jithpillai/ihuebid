@@ -326,10 +326,11 @@ model NotificationOptIn {
   // actually sent (generated then, not at opt-in time, since that's the
   // first moment the raw token is needed for an outbound artifact).
   interestTokenHash      String?   @unique @map("interest_token_hash") @db.VarChar(128)
+  // Clicking "I'm still interested" on this specific listing's page *is* the
+  // explicit consent to share the email with this specific creator — that's
+  // the whole point of the action, not a separate choice layered on top.
+  // Never shared with iHue generally or any other creator, only this one.
   stillInterestedAt      DateTime? @map("still_interested_at") @db.Timestamptz(3)
-  // Only set true via the participant's explicit choice on the interested
-  // page — never automatic (requirements §7.2).
-  sharedContactWithCreator Boolean @default(false) @map("shared_contact_with_creator")
   createdAt              DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt              DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 
