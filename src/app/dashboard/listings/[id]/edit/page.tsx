@@ -3,12 +3,14 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { AggregateResult } from "@/components/aggregate-result";
+import { CloseListingForm } from "@/components/close-listing-form";
 import { ListingEmbedForm } from "@/components/listing-embed-form";
 import { ListingGalleryUploader } from "@/components/listing-gallery-uploader";
 import { ListingReferenceLinks } from "@/components/listing-reference-links";
 import { PublishListingButton } from "@/components/publish-listing-button";
 import { AuthError } from "@/server/auth/auth-service";
 import { getCurrentSession } from "@/server/auth/session";
+import { getStillInterestedParticipants } from "@/server/listings/interest-service";
 import { getListingForOwner } from "@/server/listings/listing-service";
 import { getListingAggregate } from "@/server/listings/response-service";
 import { cloudinaryImageUrl } from "@/server/media/cloudinary";
@@ -33,7 +35,9 @@ export default async function EditListingPage({ params }: Props) {
   const handle = session.user.profile?.handle;
   const galleryAssets = listing.mediaAssets.map((asset) => ({ id: asset.id, url: cloudinaryImageUrl({ publicId: asset.publicId }) }));
   const canPublish = (listing.status === "DRAFT" || listing.status === "SCHEDULED") && handle;
+  const canClose = listing.status === "LIVE" || listing.status === "PAUSED";
   const aggregate = listing.status !== "DRAFT" ? await getListingAggregate(listing.id) : null;
+  const interested = listing.status === "CLOSED" ? await getStillInterestedParticipants(listing.id) : [];
 
   return (
     <section className="mx-auto max-w-2xl px-5 py-16 lg:px-8">
@@ -84,6 +88,40 @@ export default async function EditListingPage({ params }: Props) {
           <PublishListingButton listingId={listing.id} publicId={listing.publicId} handle={handle} />
           {listing.mediaAssets.length === 0 && (
             <p className="mt-2 text-center text-xs text-zinc-400">Add at least one photo before publishing.</p>
+          )}
+        </div>
+      )}
+
+      {canClose && (
+        <div className="mt-8 rounded-3xl border border-zinc-200 bg-white p-7 shadow-sm">
+          <h2 className="text-sm font-black uppercase tracking-wide text-zinc-400">Close listing</h2>
+          <p className="mt-1 text-sm text-zinc-500">Opted-in participants are emailed the outcome. This can&rsquo;t be undone.</p>
+          <div className="mt-4">
+            <CloseListingForm listingId={listing.id} />
+          </div>
+        </div>
+      )}
+
+      {listing.status === "CLOSED" && (
+        <div className="mt-8 rounded-3xl border border-zinc-200 bg-white p-7 shadow-sm">
+          <h2 className="text-sm font-black uppercase tracking-wide text-zinc-400">Closure summary</h2>
+          <p className="mt-2 text-sm text-zinc-700">
+            {listing.closureOutcome === "SOLD" && "Sold"}
+            {listing.closureOutcome === "NOT_SOLD" && "Not sold"}
+            {listing.closureOutcome === "REMOVED" && "Removed"}
+            {listing.closureFinalPrice != null && ` — ${new Intl.NumberFormat("en-IN", { style: "currency", currency: listing.currency, maximumFractionDigits: 0 }).format(Number(listing.closureFinalPrice))}`}
+          </p>
+          {listing.closureNote && <p className="mt-1 text-sm text-zinc-500">{listing.closureNote}</p>}
+
+          <h3 className="mt-6 text-xs font-black uppercase tracking-wide text-zinc-400">Still interested &amp; shared contact</h3>
+          {interested.filter((row) => row.sharedContactWithCreator).length === 0 ? (
+            <p className="mt-2 text-sm text-zinc-400">No one has shared their contact yet.</p>
+          ) : (
+            <ul className="mt-2 flex flex-col gap-1">
+              {interested.filter((row) => row.sharedContactWithCreator).map((row) => (
+                <li key={row.id} className="text-sm font-semibold text-zinc-900">{row.email}</li>
+              ))}
+            </ul>
           )}
         </div>
       )}

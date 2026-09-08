@@ -27,6 +27,7 @@ enum ExternalIdentityProvider {
 
 enum OtpPurpose {
   SIGN_IN
+  CONTACT_VERIFY
 }
 
 enum VerificationStatus {
@@ -59,6 +60,17 @@ enum OwnerPriceVisibility {
 enum ResultVisibility {
   PUBLIC
   CREATOR_ONLY
+}
+
+enum ClosureOutcome {
+  SOLD
+  NOT_SOLD
+  REMOVED
+}
+
+enum ClosureVisibility {
+  SHOW_OUTCOME
+  CLOSED_ONLY
 }
 
 enum EmbedProvider {
@@ -179,6 +191,10 @@ model Listing {
   closeAt              DateTime?            @map("close_at") @db.Timestamptz(3)
   status               ListingStatus        @default(DRAFT)
   disclosureText       String?              @map("disclosure_text") @db.Text
+  closureOutcome       ClosureOutcome?      @map("closure_outcome")
+  closureFinalPrice    Decimal?             @map("closure_final_price") @db.Decimal(14, 2)
+  closureNote          String?              @map("closure_note") @db.Text
+  closureVisibility    ClosureVisibility    @default(SHOW_OUTCOME) @map("closure_visibility")
   createdAt            DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt            DateTime             @updatedAt @map("updated_at") @db.Timestamptz(3)
 
@@ -188,6 +204,7 @@ model Listing {
   embeds      ExternalEmbed[]
   referenceLinks ReferenceLink[]
   responses   Response[]
+  notificationOptIns NotificationOptIn[]
 
   @@index([creatorId, status])
   @@map("listings")
@@ -266,7 +283,8 @@ model ParticipantIdentity {
   tokenHash String   @unique @map("token_hash") @db.VarChar(128)
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
-  responses Response[]
+  responses          Response[]
+  notificationOptIns NotificationOptIn[]
 
   @@map("participant_identities")
 }
@@ -289,4 +307,36 @@ model Response {
   @@unique([listingId, participantIdentityId])
   @@index([listingId])
   @@map("responses")
+}
+
+// "Notify me when this closes" (requirements §7.2) — deliberately a separate
+// model from Response rather than using the reserved ResponseMode.INTEREST_OPT_IN
+// value: this is contact/notification mechanics (email, OTP-style
+// verification, a magic-link token), a different shape than a Response row
+// (a value + revision count).
+model NotificationOptIn {
+  id                     String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  listingId              String    @map("listing_id") @db.Uuid
+  participantIdentityId  String    @map("participant_identity_id") @db.Uuid
+  email                  String    @db.VarChar(320)
+  verifiedAt             DateTime? @map("verified_at") @db.Timestamptz(3)
+  // Powers the "I'm still interested" magic link — same hash-the-random-token
+  // design as Session/ParticipantIdentity, the raw token only ever lives in
+  // the outbound email, never stored. Null until the closure notification is
+  // actually sent (generated then, not at opt-in time, since that's the
+  // first moment the raw token is needed for an outbound artifact).
+  interestTokenHash      String?   @unique @map("interest_token_hash") @db.VarChar(128)
+  stillInterestedAt      DateTime? @map("still_interested_at") @db.Timestamptz(3)
+  // Only set true via the participant's explicit choice on the interested
+  // page — never automatic (requirements §7.2).
+  sharedContactWithCreator Boolean @default(false) @map("shared_contact_with_creator")
+  createdAt              DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt              DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  listing             Listing             @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  participantIdentity ParticipantIdentity @relation(fields: [participantIdentityId], references: [id], onDelete: Cascade)
+
+  @@unique([listingId, participantIdentityId])
+  @@index([listingId, verifiedAt])
+  @@map("notification_opt_ins")
 }

@@ -4,12 +4,20 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { AggregateResult } from "@/components/aggregate-result";
+import { NotifyOptInForm } from "@/components/notify-optin-form";
 import { ValuationForm } from "@/components/valuation-form";
 import { getListingByPublicId } from "@/server/listings/listing-service";
 import { getAnonymousValuation, getListingAggregate } from "@/server/listings/response-service";
 import { usedVehicleFieldByKey } from "@/server/listings/templates/used-vehicle";
 import { cloudinaryImageUrl } from "@/server/media/cloudinary";
 import { getParticipantIdentityId } from "@/server/participant/identity-service";
+import { getNotificationOptIn } from "@/server/participant/notification-service";
+
+const CLOSURE_OUTCOME_LABEL: Record<string, string> = {
+  SOLD: "Sold",
+  NOT_SOLD: "Not sold",
+  REMOVED: "Removed by the creator",
+};
 
 type Props = { params: Promise<{ handle: string; listingId: string }> };
 
@@ -49,6 +57,7 @@ export default async function PublicListingPage({ params }: Props) {
   const embed = listing.embeds[0];
   const participantIdentityId = await getParticipantIdentityId();
   const existingValuation = await getAnonymousValuation(listing.id, participantIdentityId);
+  const notificationOptIn = await getNotificationOptIn(listing.id, participantIdentityId);
   const aggregate = listing.resultVisibility === "PUBLIC" ? await getListingAggregate(listing.id) : null;
   // HIDDEN_UNTIL_RESPONSE: reveal the owner's expectation only once this
   // visitor has given their own opinion first — never before, so an early
@@ -127,32 +136,58 @@ export default async function PublicListingPage({ params }: Props) {
         <p className="mt-8 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-xs leading-6 text-zinc-500">{listing.disclosureText}</p>
       )}
 
-      <div className="mt-10 rounded-3xl border border-zinc-200 bg-white p-6">
-        {showOwnerPrice && listing.ownerExpectedPrice != null && (
-          <p className="text-sm text-zinc-500">
-            Owner expects <span className="font-black text-zinc-900">{currencyFormatter.format(Number(listing.ownerExpectedPrice))}</span>
-          </p>
-        )}
-        {listing.ownerPriceVisibility === "HIDDEN_UNTIL_RESPONSE" && !showOwnerPrice && (
-          <p className="text-sm text-zinc-400">Give your estimate to see what the owner is asking.</p>
-        )}
-        <p className="mt-1 text-sm text-zinc-500">
-          Response range: <span className="font-semibold text-zinc-900">
-            {currencyFormatter.format(Number(listing.responseMin))} – {currencyFormatter.format(Number(listing.responseMax))}
-          </span>
-        </p>
-        <div className="mt-6">
-          <ValuationForm
-            listingId={listing.id}
-            status={listing.status}
-            currency={listing.currency}
-            min={Number(listing.responseMin)}
-            max={Number(listing.responseMax)}
-            increment={Number(listing.responseIncrement)}
-            initialValue={existingValuation}
-          />
+      {listing.status === "CLOSED" && (
+        <div className="mt-10 rounded-3xl border border-zinc-200 bg-zinc-50 p-6 text-center">
+          <p className="text-xs font-bold uppercase tracking-[.14em] text-zinc-400">Closed</p>
+          {listing.closureVisibility === "SHOW_OUTCOME" && listing.closureOutcome ? (
+            <>
+              <p className="mt-2 text-2xl font-black text-zinc-900">{CLOSURE_OUTCOME_LABEL[listing.closureOutcome]}</p>
+              {listing.closureOutcome === "SOLD" && listing.closureFinalPrice != null && (
+                <p className="mt-1 text-sm text-zinc-500">
+                  Final price: <span className="font-semibold text-zinc-900">{currencyFormatter.format(Number(listing.closureFinalPrice))}</span>
+                </p>
+              )}
+              {listing.closureNote && <p className="mt-3 text-sm text-zinc-600">{listing.closureNote}</p>}
+            </>
+          ) : (
+            <p className="mt-2 text-sm text-zinc-500">This listing is no longer accepting responses.</p>
+          )}
         </div>
-      </div>
+      )}
+
+      {listing.status !== "CLOSED" && (
+        <div className="mt-10 rounded-3xl border border-zinc-200 bg-white p-6">
+          {showOwnerPrice && listing.ownerExpectedPrice != null && (
+            <p className="text-sm text-zinc-500">
+              Owner expects <span className="font-black text-zinc-900">{currencyFormatter.format(Number(listing.ownerExpectedPrice))}</span>
+            </p>
+          )}
+          {listing.ownerPriceVisibility === "HIDDEN_UNTIL_RESPONSE" && !showOwnerPrice && (
+            <p className="text-sm text-zinc-400">Give your estimate to see what the owner is asking.</p>
+          )}
+          <p className="mt-1 text-sm text-zinc-500">
+            Response range: <span className="font-semibold text-zinc-900">
+              {currencyFormatter.format(Number(listing.responseMin))} – {currencyFormatter.format(Number(listing.responseMax))}
+            </span>
+          </p>
+          <div className="mt-6">
+            <ValuationForm
+              listingId={listing.id}
+              status={listing.status}
+              currency={listing.currency}
+              min={Number(listing.responseMin)}
+              max={Number(listing.responseMax)}
+              increment={Number(listing.responseIncrement)}
+              initialValue={existingValuation}
+            />
+          </div>
+          {listing.status === "LIVE" && existingValuation !== null && (
+            <div className="mt-4">
+              <NotifyOptInForm listingId={listing.id} initiallyOptedIn={notificationOptIn?.verifiedAt != null} />
+            </div>
+          )}
+        </div>
+      )}
 
       {aggregate && (
         <div className="mt-6">
