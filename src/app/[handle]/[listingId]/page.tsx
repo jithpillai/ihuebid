@@ -50,6 +50,11 @@ export default async function PublicListingPage({ params }: Props) {
   const participantIdentityId = await getParticipantIdentityId();
   const existingValuation = await getAnonymousValuation(listing.id, participantIdentityId);
   const aggregate = listing.resultVisibility === "PUBLIC" ? await getListingAggregate(listing.id) : null;
+  // HIDDEN_UNTIL_RESPONSE: reveal the owner's expectation only once this
+  // visitor has given their own opinion first — never before, so an early
+  // look at the ask price can't anchor their answer (requirements §7.1).
+  const showOwnerPrice = listing.ownerPriceVisibility === "VISIBLE"
+    || (listing.ownerPriceVisibility === "HIDDEN_UNTIL_RESPONSE" && existingValuation !== null);
 
   return (
     <article className="mx-auto max-w-3xl px-5 py-12 lg:px-8">
@@ -123,10 +128,13 @@ export default async function PublicListingPage({ params }: Props) {
       )}
 
       <div className="mt-10 rounded-3xl border border-zinc-200 bg-white p-6">
-        {listing.ownerPriceVisibility === "VISIBLE" && listing.ownerExpectedPrice != null && (
+        {showOwnerPrice && listing.ownerExpectedPrice != null && (
           <p className="text-sm text-zinc-500">
             Owner expects <span className="font-black text-zinc-900">{currencyFormatter.format(Number(listing.ownerExpectedPrice))}</span>
           </p>
+        )}
+        {listing.ownerPriceVisibility === "HIDDEN_UNTIL_RESPONSE" && !showOwnerPrice && (
+          <p className="text-sm text-zinc-400">Give your estimate to see what the owner is asking.</p>
         )}
         <p className="mt-1 text-sm text-zinc-500">
           Response range: <span className="font-semibold text-zinc-900">
@@ -148,7 +156,7 @@ export default async function PublicListingPage({ params }: Props) {
 
       {aggregate && (
         <div className="mt-6">
-          <AggregateResult data={aggregate} currency={listing.currency} showComparison={listing.ownerPriceVisibility === "VISIBLE"} />
+          <AggregateResult data={aggregate} currency={listing.currency} showComparison={showOwnerPrice} />
         </div>
       )}
     </article>

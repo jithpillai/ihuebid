@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { PriceSlider } from "@/components/price-slider";
 import type { ListingStatus } from "@/generated/prisma/client";
+import { positionalHint } from "@/lib/valuation-feedback";
 
 export function ValuationForm({
   listingId,
@@ -36,6 +37,7 @@ export function ValuationForm({
 
   const router = useRouter();
   const [value, setValue] = useState(defaultValue);
+  const hint = useMemo(() => positionalHint(value, min, max), [value, min, max]);
   const [hasResponded, setHasResponded] = useState(initialValue !== null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -85,6 +87,10 @@ export function ValuationForm({
         <span>{formatValue(min)}</span>
         <span>{formatValue(max)}</span>
       </div>
+      <p className="mt-3 h-4 text-xs font-semibold text-amber-600">{hint}</p>
+      <p className="mt-1 max-w-xs text-center text-xs text-zinc-400">
+        Give your honest opinion — the market signal is only useful if everyone answers what they&rsquo;d genuinely pay, not the lowest number they can get away with.
+      </p>
       <button
         type="button"
         onClick={submit}
