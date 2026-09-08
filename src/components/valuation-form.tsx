@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { PriceSlider } from "@/components/price-slider";
 import type { ListingStatus } from "@/generated/prisma/client";
@@ -33,6 +34,7 @@ export function ValuationForm({
     return min + Math.round((midpoint - min) / increment) * increment;
   }, [initialValue, min, max, increment]);
 
+  const router = useRouter();
   const [value, setValue] = useState(defaultValue);
   const [hasResponded, setHasResponded] = useState(initialValue !== null);
   const [error, setError] = useState("");
@@ -62,6 +64,10 @@ export function ValuationForm({
       setValue(result.value);
       setHasResponded(true);
       setJustSaved(true);
+      // Re-run the server component tree for this route so the "Market
+      // signal" panel picks up the new response — it's fetched server-side
+      // and won't otherwise know a submission just happened.
+      router.refresh();
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Unable to submit your estimate.");
     } finally {
