@@ -62,6 +62,9 @@ export async function requestEmailOtp(emailValue: string, ipAddress?: string) {
   } catch (error) {
     await db.otpChallenge.deleteMany({ where: { id, consumedAt: null } });
     if (error instanceof EmailDeliveryError) {
+      // The client only ever sees the generic message below — log the real
+      // provider-reported reason here or it's lost entirely.
+      console.error("Email delivery failed", error.message);
       throw new AuthError("EMAIL_DELIVERY_UNAVAILABLE", "We could not send the verification email. Please try again shortly.", 503);
     }
     throw error;
