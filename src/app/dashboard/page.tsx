@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { getCurrentSession } from "@/server/auth/session";
 import { listListingsForCreator } from "@/server/listings/listing-service";
+import { cloudinaryImageUrl } from "@/server/media/cloudinary";
 
 export const metadata: Metadata = { title: "Dashboard", robots: { index: false, follow: false } };
 
@@ -32,17 +34,27 @@ export default async function DashboardPage() {
         <p className="mt-8 text-sm text-zinc-400">No listings yet.</p>
       ) : (
         <ul className="mt-8 flex flex-col gap-3">
-          {listings.map((listing) => (
-            <li key={listing.id}>
-              <Link
-                href={`/dashboard/listings/${listing.id}/edit`}
-                className="flex items-center justify-between rounded-2xl border border-zinc-200 bg-white p-5 transition hover:border-zinc-300 hover:shadow-sm"
-              >
-                <span className="font-bold text-zinc-900">{listing.title}</span>
-                <span className="text-xs font-bold uppercase tracking-wide text-zinc-400">{listing.status}</span>
-              </Link>
-            </li>
-          ))}
+          {listings.map((listing) => {
+            const cover = listing.mediaAssets[0];
+            return (
+              <li key={listing.id}>
+                <Link
+                  href={`/dashboard/listings/${listing.id}/edit`}
+                  className="flex items-center gap-4 rounded-2xl border border-zinc-200 bg-white p-3 transition hover:border-zinc-300 hover:shadow-sm"
+                >
+                  <div className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-zinc-100">
+                    {cover && (
+                      <Image src={cloudinaryImageUrl({ publicId: cover.publicId })} alt="" fill sizes="64px" className="object-cover" />
+                    )}
+                  </div>
+                  <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
+                    <span className="truncate font-bold text-zinc-900">{listing.title}</span>
+                    <span className="shrink-0 text-xs font-bold uppercase tracking-wide text-zinc-400">{listing.status}</span>
+                  </div>
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       )}
     </section>

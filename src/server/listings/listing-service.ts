@@ -115,6 +115,7 @@ export async function listListingsForCreator(creatorId: string) {
   return db.listing.findMany({
     where: { creatorId },
     orderBy: { createdAt: "desc" },
+    include: { mediaAssets: { orderBy: { sortOrder: "asc" }, take: 1 } },
   });
 }
 
@@ -122,6 +123,7 @@ export async function listPublicListingsForHandle(userId: string) {
   return db.listing.findMany({
     where: { creatorId: userId, status: { in: ["LIVE", "PAUSED", "CLOSED"] } },
     orderBy: { createdAt: "desc" },
+    include: { mediaAssets: { orderBy: { sortOrder: "asc" }, take: 1 } },
   });
 }
 

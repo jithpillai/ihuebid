@@ -54,17 +54,27 @@ export default async function CreatorProfilePage({ params }: Props) {
         <p className="mt-3 text-sm text-zinc-400">No published listings yet.</p>
       ) : (
         <ul className="mt-4 grid gap-3 sm:grid-cols-2">
-          {listings.map((listing) => (
-            <li key={listing.id}>
-              <Link
-                href={`/${profile.handle}/${listing.publicId}`}
-                className="block rounded-2xl border border-zinc-200 bg-white p-5 transition hover:border-zinc-300 hover:shadow-sm"
-              >
-                <p className="font-bold text-zinc-900">{listing.title}</p>
-                <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-zinc-400">{listing.status}</p>
-              </Link>
-            </li>
-          ))}
+          {listings.map((listing) => {
+            const cover = listing.mediaAssets[0];
+            return (
+              <li key={listing.id}>
+                <Link
+                  href={`/${profile.handle}/${listing.publicId}`}
+                  className="flex items-center gap-4 rounded-2xl border border-zinc-200 bg-white p-3 transition hover:border-zinc-300 hover:shadow-sm"
+                >
+                  <div className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-zinc-100">
+                    {cover && (
+                      <Image src={cloudinaryImageUrl({ publicId: cover.publicId })} alt="" fill sizes="64px" className="object-cover" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate font-bold text-zinc-900">{listing.title}</p>
+                    <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-zinc-400">{listing.status}</p>
+                  </div>
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       )}
     </section>
