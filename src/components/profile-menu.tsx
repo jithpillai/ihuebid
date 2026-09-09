@@ -41,25 +41,25 @@ export function ProfileMenu({ displayName }: { displayName: string }) {
         onClick={() => setOpen((value) => !value)}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="flex size-9 items-center justify-center rounded-full bg-zinc-900 text-sm font-bold text-white transition hover:bg-zinc-700"
+        className="flex size-9 items-center justify-center rounded-full bg-fg text-sm font-bold text-bg transition hover:opacity-90"
       >
         {getInitials(displayName)}
       </button>
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-full z-20 mt-2 w-56 rounded-2xl border border-zinc-200 bg-white p-3 shadow-lg"
+          className="absolute right-0 top-full z-20 mt-2 w-56 rounded-2xl border border-border bg-surface p-3 shadow-lg"
         >
-          <p className="truncate px-1 text-sm font-semibold text-zinc-900">{displayName}</p>
-          <div className="mt-2 flex flex-col gap-1 border-t border-zinc-100 pt-2">
-            <Link href="/dashboard" className="rounded-lg px-1 py-1.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-50">
+          <p className="truncate px-1 text-sm font-semibold text-fg">{displayName}</p>
+          <div className="mt-2 flex flex-col gap-1 border-t border-border pt-2">
+            <Link href="/dashboard" className="rounded-lg px-1 py-1.5 text-sm font-semibold text-body hover:bg-muted">
               Dashboard
             </Link>
-            <Link href="/account/settings" className="rounded-lg px-1 py-1.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-50">
+            <Link href="/account/settings" className="rounded-lg px-1 py-1.5 text-sm font-semibold text-body hover:bg-muted">
               Account settings
             </Link>
           </div>
-          <div className="mt-2 border-t border-zinc-100 pt-2">
+          <div className="mt-2 border-t border-border pt-2">
             <LogoutButton />
           </div>
         </div>

@@ -53,10 +53,10 @@ export function ListingReferenceLinks({ listingId, initialLinks }: { listingId: 
       {links.length > 0 && (
         <ul className="mb-3 flex flex-col gap-2">
           {links.map((link) => (
-            <li key={link.id} className="flex items-center justify-between gap-3 rounded-xl border border-zinc-200 px-3 py-2">
+            <li key={link.id} className="flex items-center justify-between gap-3 rounded-xl border border-border px-3 py-2">
               <div className="min-w-0">
-                <p className="truncate text-sm font-bold text-zinc-900">{link.label}</p>
-                <p className="truncate text-xs text-zinc-400">{link.url}</p>
+                <p className="truncate text-sm font-bold text-fg">{link.label}</p>
+                <p className="truncate text-xs text-subtle-fg">{link.url}</p>
               </div>
               <button type="button" onClick={() => remove(link.id)} className="shrink-0 text-xs font-bold text-red-600">
                 Remove
@@ -70,20 +70,20 @@ export function ListingReferenceLinks({ listingId, initialLinks }: { listingId: 
           value={label}
           onChange={(event) => setLabel(event.target.value)}
           placeholder="Label (optional, e.g. Instagram)"
-          className="rounded-2xl border border-zinc-300 bg-white px-4 py-2.5 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-blue-500 sm:w-1/3"
+          className="rounded-2xl border border-border-strong bg-surface px-4 py-2.5 text-sm text-fg outline-none placeholder:text-subtle-fg focus:border-accent sm:w-1/3"
         />
         <input
           value={url}
           onChange={(event) => setUrl(event.target.value)}
           placeholder="https://..."
-          className="flex-1 rounded-2xl border border-zinc-300 bg-white px-4 py-2.5 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-blue-500"
+          className="flex-1 rounded-2xl border border-border-strong bg-surface px-4 py-2.5 text-sm text-fg outline-none placeholder:text-subtle-fg focus:border-accent"
         />
-        <button disabled={loading || !url} type="submit" className="rounded-2xl bg-zinc-900 px-4 py-2.5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40">
+        <button disabled={loading || !url} type="submit" className="rounded-2xl bg-fg px-4 py-2.5 text-sm font-bold text-bg disabled:cursor-not-allowed disabled:opacity-40">
           {loading ? "Adding…" : "Add"}
         </button>
       </form>
       {error && <p role="alert" className="mt-2 text-sm font-semibold text-red-600">{error}</p>}
-      <p className="mt-2 text-xs text-zinc-400">A label is optional — leave it blank and we&rsquo;ll use the site name.</p>
+      <p className="mt-2 text-xs text-subtle-fg">A label is optional — leave it blank and we&rsquo;ll use the site name.</p>
     </div>
   );
 }

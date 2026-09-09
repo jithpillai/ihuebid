@@ -51,12 +51,12 @@ export function AvatarUploader({ initialImageUrl }: { initialImageUrl: string | 
         className="hidden"
         onChange={handleFileChange}
       />
-      <div className="relative size-24 overflow-hidden rounded-full border border-zinc-200 bg-gradient-to-br from-zinc-50 to-zinc-100">
+      <div className="relative size-24 overflow-hidden rounded-full border border-border bg-gradient-to-br from-muted to-surface-2">
         <PendingOverlay show={loading} label="" />
         {imageUrl ? (
           <Image src={imageUrl} alt="" fill sizes="96px" className="object-cover" />
         ) : (
-          <div className="flex size-full items-center justify-center text-xs font-semibold text-zinc-400">No photo</div>
+          <div className="flex size-full items-center justify-center text-xs font-semibold text-subtle-fg">No photo</div>
         )}
       </div>
       {error && <p role="alert" className="mt-2 text-sm font-semibold text-red-600">{error}</p>}
@@ -65,7 +65,7 @@ export function AvatarUploader({ initialImageUrl }: { initialImageUrl: string | 
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={loading}
-          className="rounded-2xl border border-zinc-300 bg-white px-4 py-2 text-sm font-bold text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-wait disabled:opacity-60"
+          className="rounded-2xl border border-border-strong bg-surface px-4 py-2 text-sm font-bold text-body transition hover:bg-muted disabled:cursor-wait disabled:opacity-60"
         >
           {imageUrl ? "Change photo" : "Add photo"}
         </button>
@@ -74,7 +74,7 @@ export function AvatarUploader({ initialImageUrl }: { initialImageUrl: string | 
             type="button"
             onClick={handleRemove}
             disabled={loading}
-            className="rounded-2xl border border-zinc-300 bg-white px-4 py-2 text-sm font-bold text-zinc-500 transition hover:bg-zinc-50 disabled:cursor-wait disabled:opacity-60"
+            className="rounded-2xl border border-border-strong bg-surface px-4 py-2 text-sm font-bold text-muted-fg transition hover:bg-muted disabled:cursor-wait disabled:opacity-60"
           >
             Remove
           </button>

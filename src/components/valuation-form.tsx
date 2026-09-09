@@ -48,7 +48,7 @@ export function ValuationForm({
 
   if (status !== "LIVE") {
     return (
-      <p className="rounded-2xl bg-zinc-100 px-5 py-3.5 text-center text-sm font-semibold text-zinc-500">
+      <p className="rounded-2xl bg-muted px-5 py-3.5 text-center text-sm font-semibold text-muted-fg">
         {status === "PAUSED" ? "This listing isn't accepting responses right now." : "This listing is closed."}
       </p>
     );
@@ -92,32 +92,32 @@ export function ValuationForm({
         aria-hidden="true"
         className="absolute -left-[9999px] size-px opacity-0"
       />
-      <p className="text-sm font-semibold text-zinc-500">What is this worth to you?</p>
+      <p className="text-sm font-semibold text-muted-fg">What is this worth to you?</p>
       <div className="mt-4">
         <PriceSlider value={value} range={{ min, max, step: increment }} onChange={setValue} formatValue={formatValue} disabled={loading} />
       </div>
-      <div className="mt-2 flex justify-between text-xs font-semibold text-zinc-400" style={{ width: 240 }}>
+      <div className="mt-2 flex justify-between text-xs font-semibold text-subtle-fg" style={{ width: 240 }}>
         <span>{formatValue(min)}</span>
         <span>{formatValue(max)}</span>
       </div>
       <p className="mt-3 h-4 text-xs font-semibold text-amber-600">{hint}</p>
-      <p className="mt-1 max-w-xs text-center text-xs text-zinc-400">
+      <p className="mt-1 max-w-xs text-center text-xs text-subtle-fg">
         Give your honest opinion — the market signal is only useful if everyone answers what they&rsquo;d genuinely pay, not the lowest number they can get away with.
       </p>
       <button
         type="button"
         onClick={submit}
         disabled={loading}
-        className="mt-6 w-full rounded-2xl bg-blue-600 px-5 py-3.5 text-sm font-black text-white transition hover:bg-blue-500 disabled:cursor-wait disabled:opacity-60"
+        className="mt-6 w-full rounded-2xl bg-accent px-5 py-3.5 text-sm font-black text-accent-fg transition hover:brightness-110 disabled:cursor-wait disabled:opacity-60"
       >
         {loading ? "Submitting…" : hasResponded ? "Update your estimate" : "Submit your estimate"}
       </button>
       {error && <p role="alert" className="mt-3 text-sm font-semibold text-red-600">{error}</p>}
       {justSaved && !error && (
-        <p className="mt-3 text-sm font-semibold text-blue-600">Thanks — your estimate has been recorded.</p>
+        <p className="mt-3 text-sm font-semibold text-accent-soft-fg">Thanks — your estimate has been recorded.</p>
       )}
       {hasResponded && !justSaved && !error && (
-        <p className="mt-3 text-xs text-zinc-400">You can come back and adjust this anytime while the listing is live.</p>
+        <p className="mt-3 text-xs text-subtle-fg">You can come back and adjust this anytime while the listing is live.</p>
       )}
     </div>
   );

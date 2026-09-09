@@ -85,13 +85,13 @@ export function CreateListingForm() {
   }
 
   return (
-    <form onSubmit={submit} className="relative mt-8 space-y-6 rounded-3xl border border-zinc-200 bg-white p-7 shadow-xl shadow-zinc-200/60">
+    <form onSubmit={submit} className="relative mt-8 space-y-6 rounded-3xl border border-border bg-surface p-7 shadow-xl shadow-black/5 dark:shadow-black/40">
       <PendingOverlay show={loading} label="Creating…" />
 
       <div>
-        <h2 className="text-sm font-black uppercase tracking-wide text-zinc-400">Listing basics</h2>
+        <h2 className="text-sm font-black uppercase tracking-wide text-subtle-fg">Listing basics</h2>
         <div className="mt-4 space-y-4">
-          <label className="block text-sm font-semibold text-zinc-700">
+          <label className="block text-sm font-semibold text-body">
             Title
             <input
               value={title}
@@ -99,43 +99,43 @@ export function CreateListingForm() {
               required
               maxLength={200}
               placeholder="e.g. 2021 Toyota Fortuner, Automatic"
-              className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-blue-500"
+              className="mt-2 w-full rounded-2xl border border-border-strong bg-surface px-4 py-3 text-fg outline-none placeholder:text-subtle-fg focus:border-accent"
             />
           </label>
-          <label className="block text-sm font-semibold text-zinc-700">
-            Description <span className="font-normal text-zinc-400">(optional)</span>
+          <label className="block text-sm font-semibold text-body">
+            Description <span className="font-normal text-subtle-fg">(optional)</span>
             <textarea
               value={description}
               onChange={(event) => setDescription(event.target.value)}
               rows={4}
               maxLength={4000}
-              className="mt-2 w-full resize-none rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 outline-none focus:border-blue-500"
+              className="mt-2 w-full resize-none rounded-2xl border border-border-strong bg-surface px-4 py-3 text-fg outline-none focus:border-accent"
             />
           </label>
-          <label className="block text-sm font-semibold text-zinc-700">
-            Location <span className="font-normal text-zinc-400">(optional)</span>
+          <label className="block text-sm font-semibold text-body">
+            Location <span className="font-normal text-subtle-fg">(optional)</span>
             <input
               value={locationText}
               onChange={(event) => setLocationText(event.target.value)}
               maxLength={300}
               placeholder="e.g. Bengaluru, Karnataka"
-              className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-blue-500"
+              className="mt-2 w-full rounded-2xl border border-border-strong bg-surface px-4 py-3 text-fg outline-none placeholder:text-subtle-fg focus:border-accent"
             />
           </label>
         </div>
       </div>
 
       <div>
-        <h2 className="text-sm font-black uppercase tracking-wide text-zinc-400">Vehicle details</h2>
+        <h2 className="text-sm font-black uppercase tracking-wide text-subtle-fg">Vehicle details</h2>
         <div className="mt-4">
           <ListingFieldInputs values={fieldValues} onChange={(key, value) => setFieldValues((prev) => ({ ...prev, [key]: value }))} />
         </div>
       </div>
 
       <div>
-        <h2 className="text-sm font-black uppercase tracking-wide text-zinc-400">Pricing</h2>
+        <h2 className="text-sm font-black uppercase tracking-wide text-subtle-fg">Pricing</h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <label className="block text-sm font-semibold text-zinc-700">
+          <label className="block text-sm font-semibold text-body">
             Currency
             <input
               value={currency}
@@ -144,36 +144,36 @@ export function CreateListingForm() {
               maxLength={3}
               minLength={3}
               placeholder="INR"
-              className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 uppercase text-zinc-900 outline-none focus:border-blue-500"
+              className="mt-2 w-full rounded-2xl border border-border-strong bg-surface px-4 py-3 uppercase text-fg outline-none focus:border-accent"
             />
           </label>
-          <label className="block text-sm font-semibold text-zinc-700">
-            Owner expected price <span className="font-normal text-zinc-400">(optional)</span>
+          <label className="block text-sm font-semibold text-body">
+            Owner expected price <span className="font-normal text-subtle-fg">(optional)</span>
             <input
               type="number"
               value={ownerExpectedPrice}
               onChange={(event) => setOwnerExpectedPrice(event.target.value)}
-              className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 outline-none focus:border-blue-500"
+              className="mt-2 w-full rounded-2xl border border-border-strong bg-surface px-4 py-3 text-fg outline-none focus:border-accent"
             />
           </label>
-          <label className="block text-sm font-semibold text-zinc-700 sm:col-span-2">
+          <label className="block text-sm font-semibold text-body sm:col-span-2">
             Owner price visibility
             <select
               value={ownerPriceVisibility}
               onChange={(event) => setOwnerPriceVisibility(event.target.value as typeof ownerPriceVisibility)}
-              className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 outline-none focus:border-blue-500"
+              className="mt-2 w-full rounded-2xl border border-border-strong bg-surface px-4 py-3 text-fg outline-none focus:border-accent"
             >
               <option value="NOT_SUPPLIED">Don&rsquo;t show — not supplied</option>
               <option value="VISIBLE">Show to everyone</option>
               <option value="HIDDEN_UNTIL_RESPONSE">Hide until a participant responds</option>
             </select>
           </label>
-          <label className="block text-sm font-semibold text-zinc-700 sm:col-span-2">
+          <label className="block text-sm font-semibold text-body sm:col-span-2">
             Audience results visibility
             <select
               value={resultVisibility}
               onChange={(event) => setResultVisibility(event.target.value as typeof resultVisibility)}
-              className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 outline-none focus:border-blue-500"
+              className="mt-2 w-full rounded-2xl border border-border-strong bg-surface px-4 py-3 text-fg outline-none focus:border-accent"
             >
               <option value="PUBLIC">Show consensus, range &amp; confidence to everyone</option>
               <option value="CREATOR_ONLY">Keep the results private — only I can see them</option>
@@ -184,67 +184,67 @@ export function CreateListingForm() {
               type="button"
               onClick={suggestRange}
               disabled={!canSuggest || suggesting}
-              className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-bold text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-2xl border border-accent-soft-fg/30 bg-accent-soft px-4 py-2.5 text-sm font-bold text-accent-soft-fg transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {suggesting ? "Asking Gemini…" : "Suggest a range (AI)"}
             </button>
-            {!canSuggest && <p className="mt-1 text-xs text-zinc-400">Fill in make, model, and model year first.</p>}
+            {!canSuggest && <p className="mt-1 text-xs text-subtle-fg">Fill in make, model, and model year first.</p>}
             {suggestError && <p role="alert" className="mt-2 text-sm font-semibold text-red-600">{suggestError}</p>}
             {suggestion && (
-              <div className="mt-3 rounded-2xl border border-blue-200 bg-blue-50 p-4">
-                <p className="text-sm font-bold text-zinc-900">
+              <div className="mt-3 rounded-2xl border border-accent-soft-fg/30 bg-accent-soft p-4">
+                <p className="text-sm font-bold text-fg">
                   Suggested range: {suggestion.low.toLocaleString("en-IN")} – {suggestion.high.toLocaleString("en-IN")} {currency}
                 </p>
-                <p className="mt-1 text-sm text-zinc-600">{suggestion.rationale}</p>
-                <p className="mt-2 text-xs text-zinc-400">Estimate only — not verified market data.</p>
+                <p className="mt-1 text-sm text-muted-fg">{suggestion.rationale}</p>
+                <p className="mt-2 text-xs text-subtle-fg">Estimate only — not verified market data.</p>
                 <button
                   type="button"
                   onClick={useSuggestion}
-                  className="mt-3 rounded-xl bg-blue-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-blue-500"
+                  className="mt-3 rounded-xl bg-accent px-3 py-2 text-xs font-bold text-accent-fg transition hover:brightness-110"
                 >
                   Use this range
                 </button>
               </div>
             )}
           </div>
-          <label className="block text-sm font-semibold text-zinc-700">
+          <label className="block text-sm font-semibold text-body">
             Response range minimum
             <input
               type="number"
               value={responseMin}
               onChange={(event) => setResponseMin(event.target.value)}
               required
-              className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 outline-none focus:border-blue-500"
+              className="mt-2 w-full rounded-2xl border border-border-strong bg-surface px-4 py-3 text-fg outline-none focus:border-accent"
             />
           </label>
-          <label className="block text-sm font-semibold text-zinc-700">
+          <label className="block text-sm font-semibold text-body">
             Response range maximum
             <input
               type="number"
               value={responseMax}
               onChange={(event) => setResponseMax(event.target.value)}
               required
-              className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 outline-none focus:border-blue-500"
+              className="mt-2 w-full rounded-2xl border border-border-strong bg-surface px-4 py-3 text-fg outline-none focus:border-accent"
             />
           </label>
-          <label className="block text-sm font-semibold text-zinc-700">
+          <label className="block text-sm font-semibold text-body">
             Response increment
             <input
               type="number"
               value={responseIncrement}
               onChange={(event) => setResponseIncrement(event.target.value)}
               required
-              className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 outline-none focus:border-blue-500"
+              className="mt-2 w-full rounded-2xl border border-border-strong bg-surface px-4 py-3 text-fg outline-none focus:border-accent"
             />
           </label>
         </div>
       </div>
 
       {error && <p role="alert" className="text-sm font-semibold text-red-600">{error}</p>}
-      <button disabled={loading} type="submit" className="w-full rounded-2xl bg-blue-600 px-5 py-3.5 text-sm font-black text-white transition hover:bg-blue-500 disabled:cursor-wait disabled:opacity-60">
+      <button disabled={loading} type="submit" className="w-full rounded-2xl bg-accent px-5 py-3.5 text-sm font-black text-accent-fg transition hover:brightness-110 disabled:cursor-wait disabled:opacity-60">
         {loading ? "Creating…" : "Create draft"}
       </button>
-      <p className="text-center text-xs text-zinc-400">You&rsquo;ll add photos and publish on the next screen.</p>
+      <p className="text-center text-xs text-subtle-fg">You&rsquo;ll add photos and publish on the next screen.</p>
     </form>
   );
 }

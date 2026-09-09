@@ -65,40 +65,40 @@ export function EmailLogin({ returnTo = "/", googleError }: { returnTo?: string;
   }
 
   return (
-    <form onSubmit={step === "email" ? requestOtp : verifyOtp} className="relative overflow-hidden rounded-3xl border border-zinc-200 bg-white p-7 shadow-xl shadow-zinc-200/60">
+    <form onSubmit={step === "email" ? requestOtp : verifyOtp} className="relative overflow-hidden rounded-3xl border border-border bg-surface p-7 shadow-xl shadow-black/5 dark:shadow-black/40">
       <PendingOverlay show={loading} label={loadingLabel} />
       {step === "email" && (
         <>
           <Link
             onClick={() => { setLoadingLabel("Opening Google sign-in…"); setLoading(true); }}
             href={`/api/auth/google/start?returnTo=${encodeURIComponent(returnTo)}`}
-            className="flex w-full items-center justify-center gap-3 rounded-2xl border border-zinc-300 bg-white px-5 py-3.5 text-sm font-black text-zinc-900 transition hover:bg-zinc-50"
+            className="flex w-full items-center justify-center gap-3 rounded-2xl border border-border-strong bg-surface px-5 py-3.5 text-sm font-black text-fg transition hover:bg-muted"
           >
             <span aria-hidden="true" className="text-base font-black">G</span>
             Continue with Google
           </Link>
           {googleError && googleErrors[googleError] && <p role="alert" className="mt-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">{googleErrors[googleError]}</p>}
-          <div className="my-6 flex items-center gap-3"><span className="h-px flex-1 bg-zinc-200" /><span className="text-xs font-bold uppercase tracking-[.14em] text-zinc-400">or</span><span className="h-px flex-1 bg-zinc-200" /></div>
+          <div className="my-6 flex items-center gap-3"><span className="h-px flex-1 bg-border" /><span className="text-xs font-bold uppercase tracking-[.14em] text-subtle-fg">or</span><span className="h-px flex-1 bg-border" /></div>
         </>
       )}
-      <p className="text-xs font-bold uppercase tracking-[.18em] text-blue-600">Secure email sign in</p>
-      <h2 className="mt-3 text-2xl font-black text-zinc-900">{step === "email" ? "Continue with email" : "Check your inbox"}</h2>
-      <p className="mt-2 text-sm leading-6 text-zinc-500">
+      <p className="text-xs font-bold uppercase tracking-[.18em] text-accent-soft-fg">Secure email sign in</p>
+      <h2 className="mt-3 text-2xl font-black text-fg">{step === "email" ? "Continue with email" : "Check your inbox"}</h2>
+      <p className="mt-2 text-sm leading-6 text-muted-fg">
         {step === "email" ? "We'll use this for your ihue Bid account." : `Enter the six-digit code sent to ${email}.`}
       </p>
       {step === "email" ? (
-        <label className="mt-6 block text-sm font-semibold text-zinc-700">
+        <label className="mt-6 block text-sm font-semibold text-body">
           Email address
           <input
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             placeholder="Email address"
-            className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3.5 text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-blue-500"
+            className="mt-2 w-full rounded-2xl border border-border-strong bg-surface px-4 py-3.5 text-fg outline-none transition placeholder:text-subtle-fg focus:border-accent"
           />
         </label>
       ) : (
-        <label className="mt-6 block text-sm font-semibold text-zinc-700">
+        <label className="mt-6 block text-sm font-semibold text-body">
           Verification code
           <input
             inputMode="numeric"
@@ -106,7 +106,7 @@ export function EmailLogin({ returnTo = "/", googleError }: { returnTo?: string;
             value={otp}
             onChange={(event) => setOtp(event.target.value.replace(/\D/g, ""))}
             placeholder="6-digit code"
-            className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3.5 text-center text-xl font-black tracking-[.35em] text-zinc-900 outline-none transition placeholder:text-zinc-300 focus:border-blue-500"
+            className="mt-2 w-full rounded-2xl border border-border-strong bg-surface px-4 py-3.5 text-center text-xl font-black tracking-[.35em] text-fg outline-none transition placeholder:text-subtle-fg focus:border-accent"
           />
         </label>
       )}
@@ -116,13 +116,13 @@ export function EmailLogin({ returnTo = "/", googleError }: { returnTo?: string;
           Development code: <strong className="tracking-[.2em]">{developmentCode}</strong>
         </p>
       )}
-      <button disabled={loading} type="submit" className="mt-6 w-full rounded-2xl bg-blue-600 px-5 py-3.5 text-sm font-black text-white transition hover:bg-blue-500 disabled:cursor-wait disabled:opacity-60">
+      <button disabled={loading} type="submit" className="mt-6 w-full rounded-2xl bg-accent px-5 py-3.5 text-sm font-black text-accent-fg transition hover:brightness-110 disabled:cursor-wait disabled:opacity-60">
         {loading ? "Please wait…" : step === "email" ? "Send email code" : "Verify email"}
       </button>
       {step === "otp" && (
-        <button type="button" onClick={() => setStep("email")} className="mt-4 w-full text-sm font-semibold text-zinc-500 hover:text-zinc-900">Use a different email</button>
+        <button type="button" onClick={() => setStep("email")} className="mt-4 w-full text-sm font-semibold text-muted-fg hover:text-fg">Use a different email</button>
       )}
-      <p className="mt-5 text-center text-xs text-zinc-400">The code is shown on-screen only when the local mock provider is enabled.</p>
+      <p className="mt-5 text-center text-xs text-subtle-fg">The code is shown on-screen only when the local mock provider is enabled.</p>
     </form>
   );
 }

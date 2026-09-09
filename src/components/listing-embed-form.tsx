@@ -42,14 +42,14 @@ export function ListingEmbedForm({ listingId, initialUrl }: { listingId: string;
         value={url}
         onChange={(event) => setUrl(event.target.value)}
         placeholder="https://youtube.com/watch?v=..."
-        className="flex-1 rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-blue-500"
+        className="flex-1 rounded-2xl border border-border-strong bg-surface px-4 py-3 text-fg outline-none placeholder:text-subtle-fg focus:border-accent"
       />
       <div className="flex gap-2">
-        <button disabled={loading || !url} type="submit" className="rounded-2xl bg-zinc-900 px-4 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40">
+        <button disabled={loading || !url} type="submit" className="rounded-2xl bg-fg px-4 py-3 text-sm font-bold text-bg disabled:cursor-not-allowed disabled:opacity-40">
           Save
         </button>
         {saved && (
-          <button type="button" onClick={remove} disabled={loading} className="rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold text-zinc-500">
+          <button type="button" onClick={remove} disabled={loading} className="rounded-2xl border border-border-strong px-4 py-3 text-sm font-bold text-muted-fg">
             Remove
           </button>
         )}

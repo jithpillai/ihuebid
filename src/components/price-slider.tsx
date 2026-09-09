@@ -105,7 +105,7 @@ export function PriceSlider({ value, range, onChange, formatValue, size = 240, d
         aria-valuetext={formatValue(value)}
         aria-disabled={disabled}
         onKeyDown={handleKeyDown}
-        className="absolute rounded-full border-4 border-white bg-blue-600 shadow-lg outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        className="absolute rounded-full border-4 border-surface bg-accent shadow-lg outline-none focus-visible:ring-2 focus-visible:ring-accent"
         style={{
           left: `${thumbX}%`,
           top: `${thumbY}%`,
@@ -116,7 +116,7 @@ export function PriceSlider({ value, range, onChange, formatValue, size = 240, d
         }}
       />
       <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-4 text-center">
-        <span className="text-2xl font-black text-zinc-900">{formatValue(value)}</span>
+        <span className="text-2xl font-black text-fg">{formatValue(value)}</span>
       </div>
     </div>
   );

@@ -8,6 +8,7 @@ import { ListingEmbedForm } from "@/components/listing-embed-form";
 import { ListingGalleryUploader } from "@/components/listing-gallery-uploader";
 import { ListingReferenceLinks } from "@/components/listing-reference-links";
 import { PublishListingButton } from "@/components/publish-listing-button";
+import { StatusPill } from "@/components/ui/pill";
 import { AuthError } from "@/server/auth/auth-service";
 import { getCurrentSession } from "@/server/auth/session";
 import { getStillInterestedParticipants } from "@/server/listings/interest-service";
@@ -40,17 +41,17 @@ export default async function EditListingPage({ params }: Props) {
   const interested = listing.status === "CLOSED" ? await getStillInterestedParticipants(listing.id) : [];
 
   return (
-    <section className="mx-auto max-w-2xl px-5 py-16 lg:px-8">
-      <Link href="/dashboard" className="text-sm font-semibold text-zinc-400 hover:text-zinc-600">
+    <section className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
+      <Link href="/dashboard" className="text-sm font-semibold text-muted-fg transition hover:text-fg">
         ← Your listings
       </Link>
-      <div className="mt-2 flex items-center justify-between">
-        <h1 className="text-3xl font-black tracking-tight text-zinc-900">{listing.title}</h1>
-        <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-zinc-500">{listing.status}</span>
+      <div className="mt-2 flex flex-wrap items-center gap-3">
+        <h1 className="text-3xl font-black tracking-tight text-fg">{listing.title}</h1>
+        <StatusPill status={listing.status} />
       </div>
 
       {(listing.status === "LIVE" || listing.status === "PAUSED" || listing.status === "CLOSED") && handle && (
-        <Link href={`/${handle}/${listing.publicId}`} className="mt-2 inline-block text-sm font-semibold text-blue-600 hover:underline">
+        <Link href={`/${handle}/${listing.publicId}`} className="mt-2 inline-block text-sm font-semibold text-accent-soft-fg hover:underline">
           View public listing →
         </Link>
       )}
@@ -61,23 +62,23 @@ export default async function EditListingPage({ params }: Props) {
         </div>
       )}
 
-      <div className="mt-8 rounded-3xl border border-zinc-200 bg-white p-7 shadow-sm">
-        <h2 className="text-sm font-black uppercase tracking-wide text-zinc-400">Photos</h2>
-        <p className="mt-1 text-sm text-zinc-500">The first photo is used as the cover.</p>
+      <div className="mt-8 rounded-3xl border border-border bg-surface p-7 shadow-sm">
+        <h2 className="text-sm font-black uppercase tracking-wide text-subtle-fg">Photos</h2>
+        <p className="mt-1 text-sm text-muted-fg">The first photo is used as the cover.</p>
         <div className="mt-4">
           <ListingGalleryUploader listingId={listing.id} initialAssets={galleryAssets} />
         </div>
       </div>
 
-      <div className="mt-6 rounded-3xl border border-zinc-200 bg-white p-7 shadow-sm">
-        <h2 className="text-sm font-black uppercase tracking-wide text-zinc-400">YouTube video</h2>
+      <div className="mt-6 rounded-3xl border border-border bg-surface p-7 shadow-sm">
+        <h2 className="text-sm font-black uppercase tracking-wide text-subtle-fg">YouTube video</h2>
         <div className="mt-4">
           <ListingEmbedForm listingId={listing.id} initialUrl={listing.embeds[0]?.url ?? null} />
         </div>
       </div>
 
-      <div className="mt-6 rounded-3xl border border-zinc-200 bg-white p-7 shadow-sm">
-        <h2 className="text-sm font-black uppercase tracking-wide text-zinc-400">Reference links</h2>
+      <div className="mt-6 rounded-3xl border border-border bg-surface p-7 shadow-sm">
+        <h2 className="text-sm font-black uppercase tracking-wide text-subtle-fg">Reference links</h2>
         <div className="mt-4">
           <ListingReferenceLinks listingId={listing.id} initialLinks={listing.referenceLinks} />
         </div>
@@ -87,15 +88,15 @@ export default async function EditListingPage({ params }: Props) {
         <div className="mt-8">
           <PublishListingButton listingId={listing.id} publicId={listing.publicId} handle={handle} />
           {listing.mediaAssets.length === 0 && (
-            <p className="mt-2 text-center text-xs text-zinc-400">Add at least one photo before publishing.</p>
+            <p className="mt-2 text-center text-xs text-subtle-fg">Add at least one photo before publishing.</p>
           )}
         </div>
       )}
 
       {canClose && (
-        <div className="mt-8 rounded-3xl border border-zinc-200 bg-white p-7 shadow-sm">
-          <h2 className="text-sm font-black uppercase tracking-wide text-zinc-400">Close listing</h2>
-          <p className="mt-1 text-sm text-zinc-500">Opted-in participants are emailed the outcome. This can&rsquo;t be undone.</p>
+        <div className="mt-8 rounded-3xl border border-border bg-surface p-7 shadow-sm">
+          <h2 className="text-sm font-black uppercase tracking-wide text-subtle-fg">Close listing</h2>
+          <p className="mt-1 text-sm text-muted-fg">Opted-in participants are emailed the outcome. This can&rsquo;t be undone.</p>
           <div className="mt-4">
             <CloseListingForm listingId={listing.id} />
           </div>
@@ -103,23 +104,23 @@ export default async function EditListingPage({ params }: Props) {
       )}
 
       {listing.status === "CLOSED" && (
-        <div className="mt-8 rounded-3xl border border-zinc-200 bg-white p-7 shadow-sm">
-          <h2 className="text-sm font-black uppercase tracking-wide text-zinc-400">Closure summary</h2>
-          <p className="mt-2 text-sm text-zinc-700">
+        <div className="mt-8 rounded-3xl border border-border bg-surface p-7 shadow-sm">
+          <h2 className="text-sm font-black uppercase tracking-wide text-subtle-fg">Closure summary</h2>
+          <p className="mt-2 text-sm text-body">
             {listing.closureOutcome === "SOLD" && "Sold"}
             {listing.closureOutcome === "NOT_SOLD" && "Not sold"}
             {listing.closureOutcome === "REMOVED" && "Removed"}
             {listing.closureFinalPrice != null && ` — ${new Intl.NumberFormat("en-IN", { style: "currency", currency: listing.currency, maximumFractionDigits: 0 }).format(Number(listing.closureFinalPrice))}`}
           </p>
-          {listing.closureNote && <p className="mt-1 text-sm text-zinc-500">{listing.closureNote}</p>}
+          {listing.closureNote && <p className="mt-1 text-sm text-muted-fg">{listing.closureNote}</p>}
 
-          <h3 className="mt-6 text-xs font-black uppercase tracking-wide text-zinc-400">Still interested</h3>
+          <h3 className="mt-6 text-xs font-black uppercase tracking-wide text-subtle-fg">Still interested</h3>
           {interested.length === 0 ? (
-            <p className="mt-2 text-sm text-zinc-400">No one has confirmed interest yet.</p>
+            <p className="mt-2 text-sm text-subtle-fg">No one has confirmed interest yet.</p>
           ) : (
-            <ul className="mt-2 flex flex-col gap-1">
+            <ul className="mt-2 divide-y divide-border overflow-hidden rounded-2xl border border-border">
               {interested.map((row) => (
-                <li key={row.id} className="text-sm font-semibold text-zinc-900">{row.email}</li>
+                <li key={row.id} className="bg-surface px-4 py-2.5 text-sm font-semibold text-fg">{row.email}</li>
               ))}
             </ul>
           )}

@@ -28,7 +28,7 @@ export function InterestedConfirmForm({ token, creatorDisplayName }: { token: st
 
   if (confirmed) {
     return (
-      <p className="mt-8 rounded-2xl border border-blue-200 bg-blue-50 px-5 py-4 text-sm font-semibold text-blue-700">
+      <p className="mt-8 rounded-2xl border border-accent-soft-fg/30 bg-accent-soft px-5 py-4 text-sm font-semibold text-accent-soft-fg">
         Thanks — we&rsquo;ve let {creatorDisplayName} know you&rsquo;re still interested.
       </p>
     );
@@ -40,11 +40,11 @@ export function InterestedConfirmForm({ token, creatorDisplayName }: { token: st
         type="button"
         disabled={loading}
         onClick={confirm}
-        className="w-full rounded-2xl bg-blue-600 px-5 py-3.5 text-sm font-black text-white transition hover:bg-blue-500 disabled:cursor-wait disabled:opacity-60"
+        className="w-full rounded-2xl bg-accent px-5 py-3.5 text-sm font-black text-accent-fg transition hover:brightness-110 disabled:cursor-wait disabled:opacity-60"
       >
         {loading ? "Sending…" : "I'm still interested"}
       </button>
-      <p className="text-center text-xs text-zinc-400">This shares your email with {creatorDisplayName} — not with anyone else.</p>
+      <p className="text-center text-xs text-subtle-fg">This shares your email with {creatorDisplayName} — not with anyone else.</p>
       {error && <p role="alert" className="text-sm font-semibold text-red-600">{error}</p>}
     </div>
   );

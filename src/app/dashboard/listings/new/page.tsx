@@ -13,12 +13,12 @@ export default async function NewListingPage() {
   if (!session.user.profile?.handle) redirect("/account/settings");
 
   return (
-    <section className="mx-auto max-w-2xl px-5 py-16 lg:px-8">
-      <Link href="/dashboard" className="text-sm font-semibold text-zinc-400 hover:text-zinc-600">
+    <section className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
+      <Link href="/dashboard" className="text-sm font-semibold text-subtle-fg hover:text-muted-fg">
         ← Your listings
       </Link>
-      <h1 className="mt-2 text-3xl font-black tracking-tight text-zinc-900">Used Vehicle listing</h1>
-      <p className="mt-2 text-sm leading-6 text-zinc-500">
+      <h1 className="mt-2 text-3xl font-black tracking-tight text-fg">Used Vehicle listing</h1>
+      <p className="mt-2 text-sm leading-6 text-muted-fg">
         This is saved as a draft — you&rsquo;ll add photos and publish on the next screen.
       </p>
       <CreateListingForm />
