@@ -24,6 +24,17 @@ const RESPONSE_SCHEMA = {
 
 const MAX_RATIONALE_LENGTH = 500;
 
+// Gemini's structured-output mode can't refuse to answer — given zero facts
+// it would still return a confident-looking number, indistinguishable from a
+// real estimate. This is the one source of truth for "enough to ask", used
+// both to gate the button client-side and to reject a request server-side
+// (a client-side-only check is bypassable via devtools or a direct API call).
+export const MIN_REQUIRED_SUGGESTION_FIELDS = ["make", "model", "modelYear"] as const;
+
+export function hasSufficientFactsForSuggestion(fieldValues: Record<string, string>): boolean {
+  return MIN_REQUIRED_SUGGESTION_FIELDS.every((key) => Boolean(fieldValues[key]?.trim()));
+}
+
 // Every Used Vehicle fact the creator has filled in gets passed — model,
 // variant, both model and registration year, km driven, fuel, transmission,
 // ownership count, service history, accident disclosure, accessories,

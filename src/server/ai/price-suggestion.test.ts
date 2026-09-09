@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildPriceSuggestionPrompt, normalizePriceSuggestion } from "./price-suggestion";
+import { buildPriceSuggestionPrompt, hasSufficientFactsForSuggestion, normalizePriceSuggestion } from "./price-suggestion";
 
 describe("normalizePriceSuggestion", () => {
   it("passes through a well-formed suggestion", () => {
@@ -63,5 +63,24 @@ describe("buildPriceSuggestionPrompt", () => {
     const { prompt } = buildPriceSuggestionPrompt({ currency: "INR", fieldValues: { make: "Honda", model: "City" } });
     expect(prompt).toContain("Honda");
     expect(prompt).not.toContain("Kilometres driven:");
+  });
+});
+
+describe("hasSufficientFactsForSuggestion", () => {
+  it("is false with no fields at all", () => {
+    expect(hasSufficientFactsForSuggestion({})).toBe(false);
+  });
+
+  it("is false with only some of the minimum fields", () => {
+    expect(hasSufficientFactsForSuggestion({ make: "Honda" })).toBe(false);
+    expect(hasSufficientFactsForSuggestion({ make: "Honda", model: "City" })).toBe(false);
+  });
+
+  it("is false when a minimum field is present but blank/whitespace", () => {
+    expect(hasSufficientFactsForSuggestion({ make: "Honda", model: "City", modelYear: "   " })).toBe(false);
+  });
+
+  it("is true once make, model, and model year are all filled, even with nothing else", () => {
+    expect(hasSufficientFactsForSuggestion({ make: "Honda", model: "City", modelYear: "2019" })).toBe(true);
   });
 });

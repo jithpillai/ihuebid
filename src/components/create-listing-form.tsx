@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 
 import { ListingFieldInputs } from "@/components/listing-field-inputs";
 import { PendingOverlay } from "@/components/pending-feedback";
+import { hasSufficientFactsForSuggestion } from "@/server/ai/price-suggestion";
 
 export function CreateListingForm() {
   const [title, setTitle] = useState("");
@@ -23,7 +24,7 @@ export function CreateListingForm() {
   const [suggestion, setSuggestion] = useState<{ low: number; high: number; rationale: string } | null>(null);
   const [suggestError, setSuggestError] = useState("");
   const [suggesting, setSuggesting] = useState(false);
-  const canSuggest = Boolean(fieldValues.make?.trim() && fieldValues.model?.trim() && fieldValues.modelYear?.trim());
+  const canSuggest = hasSufficientFactsForSuggestion(fieldValues);
 
   async function suggestRange() {
     setSuggestError("");
