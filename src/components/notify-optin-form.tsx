@@ -19,7 +19,7 @@ export function NotifyOptInForm({ listingId, initiallyOptedIn }: { listingId: st
   if (optedIn) {
     return (
       <p className="rounded-2xl bg-accent-soft px-4 py-3 text-center text-sm font-semibold text-accent-soft-fg">
-        You&rsquo;ll get an email when this listing closes.
+        You&rsquo;ll get an email when this listing closes, and the creator can reach you at that address.
       </p>
     );
   }
@@ -79,6 +79,9 @@ export function NotifyOptInForm({ listingId, initiallyOptedIn }: { listingId: st
         className="absolute -left-[9999px] size-px opacity-0"
       />
       <p className="text-sm font-semibold text-body">Notify me when this closes</p>
+      <p className="mt-1 text-xs text-subtle-fg">
+        Your email is shared with the creator of this listing so they can follow up — no one else.
+      </p>
       {step === "email" ? (
         <div className="mt-2 flex flex-col gap-2 sm:flex-row">
           <input
@@ -110,7 +113,7 @@ export function NotifyOptInForm({ listingId, initiallyOptedIn }: { listingId: st
       )}
       {error && <p role="alert" className="mt-2 text-sm font-semibold text-red-600">{error}</p>}
       {developmentCode && step === "code" && (
-        <p className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-center text-xs text-amber-700">
+        <p className="mt-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-center text-xs text-amber-700 dark:text-amber-300">
           Development code: <strong className="tracking-[.2em]">{developmentCode}</strong>
         </p>
       )}

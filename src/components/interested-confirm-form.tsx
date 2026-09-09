@@ -44,7 +44,7 @@ export function InterestedConfirmForm({ token, creatorDisplayName }: { token: st
       >
         {loading ? "Sending…" : "I'm still interested"}
       </button>
-      <p className="text-center text-xs text-subtle-fg">This shares your email with {creatorDisplayName} — not with anyone else.</p>
+      <p className="text-center text-xs text-subtle-fg">This tells {creatorDisplayName} you&rsquo;re still interested now that the listing has closed.</p>
       {error && <p role="alert" className="text-sm font-semibold text-red-600">{error}</p>}
     </div>
   );

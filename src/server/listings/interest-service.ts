@@ -11,16 +11,24 @@ export async function getOptInByInterestToken(token: string) {
   });
 }
 
-export async function getStillInterestedParticipants(listingId: string) {
+// Every participant who verified an email on this listing, so the creator can
+// reach out. The email is disclosed to the creator at opt-in time (the opt-in
+// form says so) — `stillInterestedAt` is now just a "confirmed again after the
+// close" signal, not the consent gate it used to be.
+export async function getListingParticipantContacts(listingId: string) {
   return db.notificationOptIn.findMany({
-    where: { listingId, stillInterestedAt: { not: null } },
-    orderBy: { stillInterestedAt: "desc" },
+    where: { listingId, verifiedAt: { not: null } },
+    orderBy: [
+      { stillInterestedAt: { sort: "desc", nulls: "last" } },
+      { createdAt: "desc" },
+    ],
+    select: { id: true, email: true, createdAt: true, stillInterestedAt: true },
   });
 }
 
-// Clicking "I'm still interested" on this listing's page is itself the
-// explicit consent to share the email with this listing's creator — that's
-// the whole point of the action (requirements §7.2), not a separate choice.
+// The email is already shared with the creator at opt-in time; this just
+// records "yes, still interested" from the post-close magic link so the
+// creator's contact list can badge the row (requirements §7.2).
 export async function confirmStillInterested(token: string) {
   const optIn = await db.notificationOptIn.findUnique({ where: { interestTokenHash: hashSessionToken(token) } });
   if (!optIn) throw new AuthError("INVALID_TOKEN", "This link is invalid or has expired.", 404);
