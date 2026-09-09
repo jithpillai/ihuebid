@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { AggregateResult } from "@/components/aggregate-result";
 import { NotifyOptInForm } from "@/components/notify-optin-form";
 import { ValuationForm } from "@/components/valuation-form";
+import { StatusPill } from "@/components/ui/pill";
 import { getListingByPublicId } from "@/server/listings/listing-service";
 import { getAnonymousValuation, getListingAggregate } from "@/server/listings/response-service";
 import { usedVehicleFieldByKey } from "@/server/listings/templates/used-vehicle";
@@ -65,135 +66,165 @@ export default async function PublicListingPage({ params }: Props) {
   const showOwnerPrice = listing.ownerPriceVisibility === "VISIBLE"
     || (listing.ownerPriceVisibility === "HIDDEN_UNTIL_RESPONSE" && existingValuation !== null);
 
-  return (
-    <article className="mx-auto max-w-3xl px-5 py-12 lg:px-8">
-      <Link href={`/${handle}`} className="text-sm font-semibold text-zinc-400 hover:text-zinc-600">
-        {listing.creator.displayName}
-      </Link>
-      <h1 className="mt-2 text-3xl font-black tracking-tight text-zinc-900">{listing.title}</h1>
-      <p className="mt-1 text-xs font-bold uppercase tracking-[.14em] text-zinc-400">
-        {listing.status}{listing.locationText ? ` · ${listing.locationText}` : ""}
-      </p>
+  const heroImage = listing.mediaAssets[0];
+  const restImages = listing.mediaAssets.slice(1);
 
-      {listing.mediaAssets.length > 0 && (
-        <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {listing.mediaAssets.map((asset, index) => (
-            <div key={asset.id} className={`relative aspect-square overflow-hidden rounded-2xl bg-zinc-100 ${index === 0 ? "col-span-2 row-span-2 aspect-video sm:col-span-2" : ""}`}>
-              <Image
-                src={cloudinaryImageUrl({ publicId: asset.publicId })}
-                alt=""
-                fill
-                sizes="(min-width: 768px) 640px, 100vw"
-                className="object-cover"
-                priority={index === 0}
+  return (
+    <article className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
+      <Link href={`/${handle}`} className="text-sm font-semibold text-muted-fg transition hover:text-fg">
+        ← {listing.creator.displayName}
+      </Link>
+
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <h1 className="text-3xl font-black tracking-tight text-fg sm:text-4xl">{listing.title}</h1>
+        <StatusPill status={listing.status} />
+      </div>
+      {listing.locationText && <p className="mt-1 text-sm font-semibold text-subtle-fg">{listing.locationText}</p>}
+
+      <div className="mt-8 grid gap-8 lg:grid-cols-[1.6fr_1fr] lg:items-start">
+        {/* Left column — the listing itself */}
+        <div className="min-w-0">
+          {heroImage && (
+            <div className="overflow-hidden rounded-3xl border border-border bg-muted">
+              <div className="relative aspect-[16/10]">
+                <Image
+                  src={cloudinaryImageUrl({ publicId: heroImage.publicId })}
+                  alt=""
+                  fill
+                  sizes="(min-width: 1024px) 720px, 100vw"
+                  className="object-cover"
+                  priority
+                />
+              </div>
+              {restImages.length > 0 && (
+                <div className="grid grid-cols-3 gap-1 p-1 sm:grid-cols-4">
+                  {restImages.map((asset) => (
+                    <div key={asset.id} className="relative aspect-square overflow-hidden rounded-xl bg-surface">
+                      <Image
+                        src={cloudinaryImageUrl({ publicId: asset.publicId })}
+                        alt=""
+                        fill
+                        sizes="180px"
+                        className="object-cover"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {embed && (
+            <div className="mt-4 aspect-video overflow-hidden rounded-3xl border border-border bg-muted">
+              <iframe
+                src={embed.url}
+                title="Listing video"
+                className="size-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
               />
             </div>
-          ))}
-        </div>
-      )}
-
-      {embed && (
-        <div className="mt-6 aspect-video overflow-hidden rounded-2xl bg-zinc-100">
-          <iframe
-            src={embed.url}
-            title="Listing video"
-            className="size-full"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          />
-        </div>
-      )}
-
-      {listing.description && <p className="mt-8 text-base leading-7 text-zinc-600">{listing.description}</p>}
-
-      {vehicleFields.length > 0 && (
-        <dl className="mt-8 grid grid-cols-2 gap-x-6 gap-y-4 rounded-2xl border border-zinc-200 bg-white p-6 sm:grid-cols-3">
-          {vehicleFields.map(({ field, value }) => (
-            <div key={field.key}>
-              <dt className="text-xs font-bold uppercase tracking-wide text-zinc-400">{field.label}</dt>
-              <dd className="mt-1 text-sm font-semibold text-zinc-900">{value}</dd>
-            </div>
-          ))}
-        </dl>
-      )}
-
-      {listing.referenceLinks.length > 0 && (
-        <div className="mt-8">
-          <h2 className="text-sm font-black uppercase tracking-wide text-zinc-400">References</h2>
-          <ul className="mt-2 flex flex-col gap-1">
-            {listing.referenceLinks.map((link) => (
-              <li key={link.id}>
-                <a href={link.url} target="_blank" rel="noreferrer" className="text-sm font-semibold text-blue-600 hover:underline">
-                  {link.label}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {listing.disclosureText && (
-        <p className="mt-8 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-xs leading-6 text-zinc-500">{listing.disclosureText}</p>
-      )}
-
-      {listing.status === "CLOSED" && (
-        <div className="mt-10 rounded-3xl border border-zinc-200 bg-zinc-50 p-6 text-center">
-          <p className="text-xs font-bold uppercase tracking-[.14em] text-zinc-400">Closed</p>
-          {listing.closureVisibility === "SHOW_OUTCOME" && listing.closureOutcome ? (
-            <>
-              <p className="mt-2 text-2xl font-black text-zinc-900">{CLOSURE_OUTCOME_LABEL[listing.closureOutcome]}</p>
-              {listing.closureOutcome === "SOLD" && listing.closureFinalPrice != null && (
-                <p className="mt-1 text-sm text-zinc-500">
-                  Final price: <span className="font-semibold text-zinc-900">{currencyFormatter.format(Number(listing.closureFinalPrice))}</span>
-                </p>
-              )}
-              {listing.closureNote && <p className="mt-3 text-sm text-zinc-600">{listing.closureNote}</p>}
-            </>
-          ) : (
-            <p className="mt-2 text-sm text-zinc-500">This listing is no longer accepting responses.</p>
           )}
-        </div>
-      )}
 
-      {listing.status !== "CLOSED" && (
-        <div className="mt-10 rounded-3xl border border-zinc-200 bg-white p-6">
-          {showOwnerPrice && listing.ownerExpectedPrice != null && (
-            <p className="text-sm text-zinc-500">
-              Owner expects <span className="font-black text-zinc-900">{currencyFormatter.format(Number(listing.ownerExpectedPrice))}</span>
+          {listing.description && (
+            <p className="mt-6 whitespace-pre-line text-base leading-7 text-body">{listing.description}</p>
+          )}
+
+          {vehicleFields.length > 0 && (
+            <dl className="mt-6 grid grid-cols-2 gap-x-6 gap-y-4 rounded-3xl border border-border bg-surface p-6 sm:grid-cols-3">
+              {vehicleFields.map(({ field, value }) => (
+                <div key={field.key}>
+                  <dt className="text-xs font-bold uppercase tracking-wide text-subtle-fg">{field.label}</dt>
+                  <dd className="mt-1 text-sm font-semibold text-fg">{value}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
+
+          {listing.referenceLinks.length > 0 && (
+            <div className="mt-6">
+              <h2 className="text-xs font-black uppercase tracking-wide text-subtle-fg">References</h2>
+              <ul className="mt-2 flex flex-col gap-1">
+                {listing.referenceLinks.map((link) => (
+                  <li key={link.id}>
+                    <a href={link.url} target="_blank" rel="noreferrer" className="text-sm font-semibold text-accent-soft-fg hover:underline">
+                      {link.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {listing.disclosureText && (
+            <p className="mt-6 rounded-3xl border border-border bg-muted/50 p-4 text-xs leading-6 text-muted-fg">
+              {listing.disclosureText}
             </p>
           )}
-          {listing.ownerPriceVisibility === "HIDDEN_UNTIL_RESPONSE" && !showOwnerPrice && (
-            <p className="text-sm text-zinc-400">Give your estimate to see what the owner is asking.</p>
+        </div>
+
+        {/* Right column — the ask */}
+        <div className="lg:sticky lg:top-24">
+          {listing.status === "CLOSED" ? (
+            <div className="rounded-3xl border border-border bg-surface p-6 text-center">
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-subtle-fg">Closed</p>
+              {listing.closureVisibility === "SHOW_OUTCOME" && listing.closureOutcome ? (
+                <>
+                  <p className="mt-2 text-2xl font-black text-fg">{CLOSURE_OUTCOME_LABEL[listing.closureOutcome]}</p>
+                  {listing.closureOutcome === "SOLD" && listing.closureFinalPrice != null && (
+                    <p className="tnum mt-1 text-sm text-muted-fg">
+                      Final price: <span className="font-semibold text-fg">{currencyFormatter.format(Number(listing.closureFinalPrice))}</span>
+                    </p>
+                  )}
+                  {listing.closureNote && <p className="mt-3 text-sm text-body">{listing.closureNote}</p>}
+                </>
+              ) : (
+                <p className="mt-2 text-sm text-muted-fg">This listing is no longer accepting responses.</p>
+              )}
+            </div>
+          ) : (
+            <div className="rounded-3xl border border-border bg-surface p-6">
+              {showOwnerPrice && listing.ownerExpectedPrice != null && (
+                <p className="text-sm text-muted-fg">
+                  Owner expects{" "}
+                  <span className="tnum font-black text-fg">{currencyFormatter.format(Number(listing.ownerExpectedPrice))}</span>
+                </p>
+              )}
+              {listing.ownerPriceVisibility === "HIDDEN_UNTIL_RESPONSE" && !showOwnerPrice && (
+                <p className="text-sm text-subtle-fg">Give your estimate to see what the owner is asking.</p>
+              )}
+              <p className="tnum mt-1 text-sm text-muted-fg">
+                Response range:{" "}
+                <span className="font-semibold text-fg">
+                  {currencyFormatter.format(Number(listing.responseMin))} – {currencyFormatter.format(Number(listing.responseMax))}
+                </span>
+              </p>
+              <div className="mt-6">
+                <ValuationForm
+                  listingId={listing.id}
+                  status={listing.status}
+                  currency={listing.currency}
+                  min={Number(listing.responseMin)}
+                  max={Number(listing.responseMax)}
+                  increment={Number(listing.responseIncrement)}
+                  initialValue={existingValuation}
+                />
+              </div>
+              {listing.status === "LIVE" && existingValuation !== null && (
+                <div className="mt-4">
+                  <NotifyOptInForm listingId={listing.id} initiallyOptedIn={notificationOptIn?.verifiedAt != null} />
+                </div>
+              )}
+            </div>
           )}
-          <p className="mt-1 text-sm text-zinc-500">
-            Response range: <span className="font-semibold text-zinc-900">
-              {currencyFormatter.format(Number(listing.responseMin))} – {currencyFormatter.format(Number(listing.responseMax))}
-            </span>
-          </p>
-          <div className="mt-6">
-            <ValuationForm
-              listingId={listing.id}
-              status={listing.status}
-              currency={listing.currency}
-              min={Number(listing.responseMin)}
-              max={Number(listing.responseMax)}
-              increment={Number(listing.responseIncrement)}
-              initialValue={existingValuation}
-            />
-          </div>
-          {listing.status === "LIVE" && existingValuation !== null && (
+
+          {aggregate && (
             <div className="mt-4">
-              <NotifyOptInForm listingId={listing.id} initiallyOptedIn={notificationOptIn?.verifiedAt != null} />
+              <AggregateResult data={aggregate} currency={listing.currency} showComparison={showOwnerPrice} />
             </div>
           )}
         </div>
-      )}
-
-      {aggregate && (
-        <div className="mt-6">
-          <AggregateResult data={aggregate} currency={listing.currency} showComparison={showOwnerPrice} />
-        </div>
-      )}
+      </div>
     </article>
   );
 }

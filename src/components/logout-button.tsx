@@ -13,7 +13,7 @@ export function LogoutButton() {
         await fetch("/api/auth/logout", { method: "POST" });
         window.location.assign("/");
       }}
-      className="text-sm font-semibold text-zinc-500 transition hover:text-zinc-900 disabled:cursor-wait disabled:opacity-60"
+      className="text-sm font-semibold text-muted-fg transition hover:text-fg disabled:cursor-wait disabled:opacity-60"
     >
       {loading ? "Signing out…" : "Sign out"}
     </button>

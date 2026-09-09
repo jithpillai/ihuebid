@@ -72,21 +72,21 @@ export function ListingGalleryUploader({ listingId, initialAssets }: { listingId
       {assets.length > 0 && (
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
           {assets.map((asset, index) => (
-            <div key={asset.id} className="group relative aspect-square overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-100">
+            <div key={asset.id} className="group relative aspect-square overflow-hidden rounded-2xl border border-border bg-muted">
               <Image src={asset.url} alt="" fill sizes="200px" className="object-cover" />
               {index === 0 && (
-                <span className="absolute left-1.5 top-1.5 rounded-full bg-zinc-900/80 px-2 py-0.5 text-[10px] font-bold text-white">Cover</span>
+                <span className="absolute left-1.5 top-1.5 rounded-full bg-fg/80 px-2 py-0.5 text-[10px] font-bold text-bg">Cover</span>
               )}
               <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-gradient-to-t from-black/70 to-transparent p-1.5 opacity-0 transition group-hover:opacity-100">
                 <div className="flex gap-1">
-                  <button type="button" onClick={() => move(index, -1)} disabled={index === 0} className="rounded bg-white/90 px-1.5 py-0.5 text-xs font-bold text-zinc-900 disabled:opacity-40">
+                  <button type="button" onClick={() => move(index, -1)} disabled={index === 0} className="rounded bg-surface/90 px-1.5 py-0.5 text-xs font-bold text-fg disabled:opacity-40">
                     ←
                   </button>
-                  <button type="button" onClick={() => move(index, 1)} disabled={index === assets.length - 1} className="rounded bg-white/90 px-1.5 py-0.5 text-xs font-bold text-zinc-900 disabled:opacity-40">
+                  <button type="button" onClick={() => move(index, 1)} disabled={index === assets.length - 1} className="rounded bg-surface/90 px-1.5 py-0.5 text-xs font-bold text-fg disabled:opacity-40">
                     →
                   </button>
                 </div>
-                <button type="button" onClick={() => removeAsset(asset.id)} className="rounded bg-white/90 px-1.5 py-0.5 text-xs font-bold text-red-600">
+                <button type="button" onClick={() => removeAsset(asset.id)} className="rounded bg-surface/90 px-1.5 py-0.5 text-xs font-bold text-red-600">
                   Remove
                 </button>
               </div>
@@ -99,7 +99,7 @@ export function ListingGalleryUploader({ listingId, initialAssets }: { listingId
         type="button"
         onClick={() => inputRef.current?.click()}
         disabled={loading}
-        className="mt-3 rounded-2xl border border-dashed border-zinc-300 px-4 py-3 text-sm font-semibold text-zinc-500 transition hover:border-blue-400 hover:text-blue-700 disabled:cursor-wait disabled:opacity-60"
+        className="mt-3 rounded-2xl border border-dashed border-border-strong px-4 py-3 text-sm font-semibold text-muted-fg transition hover:border-accent hover:text-accent-soft-fg disabled:cursor-wait disabled:opacity-60"
       >
         Add photos
       </button>

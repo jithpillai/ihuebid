@@ -26,7 +26,7 @@ export function PublishListingButton({ listingId, publicId, handle }: { listingI
         type="button"
         onClick={publish}
         disabled={loading}
-        className="w-full rounded-2xl bg-blue-600 px-5 py-3.5 text-sm font-black text-white transition hover:bg-blue-500 disabled:cursor-wait disabled:opacity-60"
+        className="w-full rounded-2xl bg-accent px-5 py-3.5 text-sm font-black text-accent-fg transition hover:brightness-110 disabled:cursor-wait disabled:opacity-60"
       >
         {loading ? "Publishing…" : "Publish listing"}
       </button>

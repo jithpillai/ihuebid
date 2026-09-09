@@ -119,11 +119,49 @@ export async function listListingsForCreator(creatorId: string) {
   });
 }
 
+// Count of valuations per listing — same ANONYMOUS_VALUATION filter that
+// `getListingAggregate` uses, so a card's count and its aggregate can't disagree.
+async function responseCountsByListing(listingIds: string[]): Promise<Map<string, number>> {
+  if (listingIds.length === 0) return new Map();
+  const rows = await db.response.groupBy({
+    by: ["listingId"],
+    where: { listingId: { in: listingIds }, mode: "ANONYMOUS_VALUATION" },
+    _count: { _all: true },
+  });
+  return new Map(rows.map((row) => [row.listingId, row._count._all]));
+}
+
+export async function listListingsForCreatorWithStats(creatorId: string) {
+  const listings = await listListingsForCreator(creatorId);
+  const counts = await responseCountsByListing(listings.map((listing) => listing.id));
+  return listings.map((listing) => ({ ...listing, responseCount: counts.get(listing.id) ?? 0 }));
+}
+
 export async function listPublicListingsForHandle(userId: string) {
   return db.listing.findMany({
     where: { creatorId: userId, status: { in: ["LIVE", "PAUSED", "CLOSED"] } },
     orderBy: { createdAt: "desc" },
     include: { mediaAssets: { orderBy: { sortOrder: "asc" }, take: 1 } },
+  });
+}
+
+export async function listPublicListingsForHandleWithStats(userId: string) {
+  const listings = await listPublicListingsForHandle(userId);
+  const counts = await responseCountsByListing(listings.map((listing) => listing.id));
+  return listings.map((listing) => ({ ...listing, responseCount: counts.get(listing.id) ?? 0 }));
+}
+
+// Cross-creator feed for the marketing landing page. Only LIVE listings whose
+// creator has claimed a handle (otherwise there's no public URL to link to).
+export async function listRecentPublicListings(limit = 6) {
+  return db.listing.findMany({
+    where: { status: "LIVE", creator: { profile: { is: { handle: { not: null } } } } },
+    orderBy: [{ publishAt: "desc" }, { createdAt: "desc" }],
+    take: limit,
+    include: {
+      creator: { include: { profile: true } },
+      mediaAssets: { orderBy: { sortOrder: "asc" }, take: 1 },
+    },
   });
 }
 

@@ -18,7 +18,7 @@ export function NotifyOptInForm({ listingId, initiallyOptedIn }: { listingId: st
 
   if (optedIn) {
     return (
-      <p className="rounded-2xl bg-blue-50 px-4 py-3 text-center text-sm font-semibold text-blue-700">
+      <p className="rounded-2xl bg-accent-soft px-4 py-3 text-center text-sm font-semibold text-accent-soft-fg">
         You&rsquo;ll get an email when this listing closes.
       </p>
     );
@@ -66,7 +66,7 @@ export function NotifyOptInForm({ listingId, initiallyOptedIn }: { listingId: st
   }
 
   return (
-    <form onSubmit={step === "email" ? requestCode : verifyCode} className="relative rounded-2xl border border-zinc-200 bg-white p-4">
+    <form onSubmit={step === "email" ? requestCode : verifyCode} className="relative rounded-2xl border border-border bg-surface p-4">
       <PendingOverlay show={loading} label="Please wait…" />
       <input
         type="text"
@@ -78,7 +78,7 @@ export function NotifyOptInForm({ listingId, initiallyOptedIn }: { listingId: st
         aria-hidden="true"
         className="absolute -left-[9999px] size-px opacity-0"
       />
-      <p className="text-sm font-semibold text-zinc-700">Notify me when this closes</p>
+      <p className="text-sm font-semibold text-body">Notify me when this closes</p>
       {step === "email" ? (
         <div className="mt-2 flex flex-col gap-2 sm:flex-row">
           <input
@@ -87,9 +87,9 @@ export function NotifyOptInForm({ listingId, initiallyOptedIn }: { listingId: st
             onChange={(event) => setEmail(event.target.value)}
             required
             placeholder="you@example.com"
-            className="flex-1 rounded-2xl border border-zinc-300 bg-white px-4 py-2.5 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-blue-500"
+            className="flex-1 rounded-2xl border border-border-strong bg-surface px-4 py-2.5 text-sm text-fg outline-none placeholder:text-subtle-fg focus:border-accent"
           />
-          <button disabled={loading} type="submit" className="rounded-2xl bg-zinc-900 px-4 py-2.5 text-sm font-bold text-white disabled:cursor-wait disabled:opacity-60">
+          <button disabled={loading} type="submit" className="rounded-2xl bg-fg px-4 py-2.5 text-sm font-bold text-bg disabled:cursor-wait disabled:opacity-60">
             Send code
           </button>
         </div>
@@ -101,9 +101,9 @@ export function NotifyOptInForm({ listingId, initiallyOptedIn }: { listingId: st
             value={code}
             onChange={(event) => setCode(event.target.value.replace(/\D/g, ""))}
             placeholder="6-digit code"
-            className="flex-1 rounded-2xl border border-zinc-300 bg-white px-4 py-2.5 text-center text-sm font-black tracking-[.3em] text-zinc-900 outline-none placeholder:text-zinc-300 focus:border-blue-500"
+            className="flex-1 rounded-2xl border border-border-strong bg-surface px-4 py-2.5 text-center text-sm font-black tracking-[.3em] text-fg outline-none placeholder:text-subtle-fg focus:border-accent"
           />
-          <button disabled={loading} type="submit" className="rounded-2xl bg-zinc-900 px-4 py-2.5 text-sm font-bold text-white disabled:cursor-wait disabled:opacity-60">
+          <button disabled={loading} type="submit" className="rounded-2xl bg-fg px-4 py-2.5 text-sm font-bold text-bg disabled:cursor-wait disabled:opacity-60">
             Verify
           </button>
         </div>

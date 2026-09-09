@@ -1,8 +1,78 @@
 @import "tailwindcss";
 
+/* Dark mode is a deliberate toggle (persisted in localStorage + synced by the
+   inline script in layout.tsx), not media-only — so `dark:` keys off a `.dark`
+   class on <html>. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ---- Semantic palette -----------------------------------------------------
+   Components only ever reference these role tokens (bg-surface, text-muted-fg,
+   border-border, …). The raw light/dark values live in :root / .dark below,
+   so a single class flip re-themes the whole app. */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+
+  --color-fg: var(--fg);
+  --color-body: var(--body);
+  --color-muted-fg: var(--muted-fg);
+  --color-subtle-fg: var(--subtle-fg);
+
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-soft-fg: var(--accent-soft-fg);
+
+  --font-sans: var(--font-stack-sans);
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #18181b;
+  --font-stack-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+
+  --bg: #f6f6f8;
+  --surface: #ffffff;
+  --surface-2: #fafafa;
+  --muted: #f1f1f3;
+  --border: #e5e5ea;
+  --border-strong: #d4d4d8;
+
+  --fg: #17171b;
+  --body: #3f3f46;
+  --muted-fg: #6c6c78;
+  --subtle-fg: #9a9aa6;
+
+  --accent: #2563eb;
+  --accent-fg: #ffffff;
+  --accent-soft: #eef4ff;
+  --accent-soft-fg: #1d4ed8;
+
+  color-scheme: light;
+}
+
+.dark {
+  --bg: #0a0c10;
+  --surface: #14171d;
+  --surface-2: #1a1e26;
+  --muted: #1e232c;
+  --border: #2a2f3a;
+  --border-strong: #3a4150;
+
+  --fg: #f3f4f6;
+  --body: #c8ccd4;
+  --muted-fg: #969ca8;
+  --subtle-fg: #6a7181;
+
+  --accent: #3b82f6;
+  --accent-fg: #ffffff;
+  --accent-soft: #172a52;
+  --accent-soft-fg: #93c5fd;
+
+  color-scheme: dark;
 }
 
 * {
@@ -15,9 +85,21 @@ html {
 
 body {
   margin: 0;
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--body);
+  font-family: var(--font-stack-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Prices and other figures line up in columns. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+::selection {
+  background: color-mix(in oklab, var(--accent) 28%, transparent);
 }
 
 button,
@@ -31,4 +113,17 @@ button:not(:disabled),
 [role="button"]:not([aria-disabled="true"]),
 label[for] {
   cursor: pointer;
+}
+
+.dark ::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+.dark ::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border: 3px solid var(--bg);
+  border-radius: 999px;
 }

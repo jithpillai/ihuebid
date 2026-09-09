@@ -14,15 +14,15 @@ export function ListingFieldInputs({
       {USED_VEHICLE_FIELDS.map((field) => (
         <label
           key={field.key}
-          className={`block text-sm font-semibold text-zinc-700 ${field.type === "textarea" ? "sm:col-span-2" : ""}`}
+          className={`block text-sm font-semibold text-body ${field.type === "textarea" ? "sm:col-span-2" : ""}`}
         >
-          {field.label} {!field.required && <span className="font-normal text-zinc-400">(optional)</span>}
+          {field.label} {!field.required && <span className="font-normal text-subtle-fg">(optional)</span>}
           {field.type === "select" ? (
             <select
               value={values[field.key] ?? ""}
               onChange={(event) => onChange(field.key, event.target.value)}
               required={field.required}
-              className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 outline-none focus:border-blue-500"
+              className="mt-2 w-full rounded-2xl border border-border-strong bg-surface px-4 py-3 text-fg outline-none focus:border-accent"
             >
               <option value="">Select…</option>
               {field.options?.map((option) => (
@@ -35,7 +35,7 @@ export function ListingFieldInputs({
               onChange={(event) => onChange(field.key, event.target.value)}
               required={field.required}
               rows={3}
-              className="mt-2 w-full resize-none rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 outline-none focus:border-blue-500"
+              className="mt-2 w-full resize-none rounded-2xl border border-border-strong bg-surface px-4 py-3 text-fg outline-none focus:border-accent"
             />
           ) : (
             <input
@@ -43,7 +43,7 @@ export function ListingFieldInputs({
               value={values[field.key] ?? ""}
               onChange={(event) => onChange(field.key, event.target.value)}
               required={field.required}
-              className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 outline-none focus:border-blue-500"
+              className="mt-2 w-full rounded-2xl border border-border-strong bg-surface px-4 py-3 text-fg outline-none focus:border-accent"
             />
           )}
         </label>

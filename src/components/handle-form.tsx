@@ -31,24 +31,24 @@ export function HandleForm({ initialHandle }: { initialHandle: string }) {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3 sm:flex-row sm:items-start">
       <div className="flex-1">
-        <div className="flex items-center rounded-2xl border border-zinc-300 bg-white pl-4 focus-within:border-blue-500">
-          <span className="text-sm text-zinc-400">bid.ihue.in/</span>
+        <div className="flex items-center rounded-2xl border border-border-strong bg-surface pl-4 focus-within:border-accent">
+          <span className="text-sm text-subtle-fg">bid.ihue.in/</span>
           <input
             value={handle}
             onChange={(event) => setHandle(event.target.value)}
             placeholder="your-handle"
-            className="w-full rounded-2xl bg-transparent py-3.5 pr-4 text-zinc-900 outline-none placeholder:text-zinc-400"
+            className="w-full rounded-2xl bg-transparent py-3.5 pr-4 text-fg outline-none placeholder:text-subtle-fg"
           />
         </div>
         {error && <p role="alert" className="mt-2 text-sm font-semibold text-red-600">{error}</p>}
         {!error && savedHandle && (
-          <p className="mt-2 text-sm text-zinc-400">Currently live at bid.ihue.in/{savedHandle}</p>
+          <p className="mt-2 text-sm text-subtle-fg">Currently live at bid.ihue.in/{savedHandle}</p>
         )}
       </div>
       <button
         disabled={loading || handle === savedHandle}
         type="submit"
-        className="rounded-2xl bg-blue-600 px-5 py-3.5 text-sm font-black text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-40"
+        className="rounded-2xl bg-accent px-5 py-3.5 text-sm font-black text-accent-fg transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
       >
         {loading ? "Saving…" : "Save handle"}
       </button>

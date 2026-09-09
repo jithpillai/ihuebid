@@ -16,16 +16,18 @@ export default async function InterestedPage({ searchParams }: Props) {
   if (!optIn) notFound();
 
   return (
-    <section className="mx-auto max-w-md px-5 py-16 text-center lg:px-8">
-      <h1 className="text-2xl font-black tracking-tight text-zinc-900">{optIn.listing.title}</h1>
-      <p className="mt-2 text-sm text-zinc-500">This listing from {optIn.listing.creator.displayName} has closed.</p>
+    <section className="mx-auto max-w-md px-5 py-20 lg:px-8">
+      <div className="rounded-3xl border border-border bg-surface p-8 text-center shadow-sm shadow-black/5 dark:shadow-black/30">
+      <h1 className="text-2xl font-black tracking-tight text-fg">{optIn.listing.title}</h1>
+      <p className="mt-2 text-sm text-muted-fg">This listing from {optIn.listing.creator.displayName} has closed.</p>
       {optIn.stillInterestedAt ? (
-        <p className="mt-8 rounded-2xl border border-blue-200 bg-blue-50 px-5 py-4 text-sm font-semibold text-blue-700">
+        <p className="mt-8 rounded-2xl border border-accent-soft-fg/30 bg-accent-soft px-5 py-4 text-sm font-semibold text-accent-soft-fg">
           Thanks — we&rsquo;ve let {optIn.listing.creator.displayName} know you&rsquo;re still interested.
         </p>
       ) : (
         <InterestedConfirmForm token={token} creatorDisplayName={optIn.listing.creator.displayName} />
       )}
+      </div>
     </section>
   );
 }

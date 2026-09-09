@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 
+import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 
 import "./globals.css";
@@ -21,16 +22,27 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  colorScheme: "light",
-  themeColor: "#ffffff",
+  colorScheme: "light dark",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f6f6f8" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0c10" },
+  ],
 };
+
+// Runs before first paint so the stored theme is applied with no flash and no
+// hydration mismatch. Kept tiny and dependency-free on purpose.
+const themeScript = `(function(){try{var t=localStorage.getItem("ihue-bid-theme");if(t==="dark"||(t!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches)){document.documentElement.classList.add("dark")}}catch(e){}})();`;
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
-      <body>
-        <SiteHeader />
-        <main>{children}</main>
+    <html lang="en" suppressHydrationWarning>
+      <body className="min-h-dvh bg-bg text-body">
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <div className="flex min-h-dvh flex-col">
+          <SiteHeader />
+          <main className="flex-1">{children}</main>
+          <SiteFooter />
+        </div>
       </body>
     </html>
   );
