@@ -11,7 +11,7 @@ import { PublishListingButton } from "@/components/publish-listing-button";
 import { StatusPill } from "@/components/ui/pill";
 import { AuthError } from "@/server/auth/auth-service";
 import { getCurrentSession } from "@/server/auth/session";
-import { getStillInterestedParticipants } from "@/server/listings/interest-service";
+import { getListingParticipantContacts } from "@/server/listings/interest-service";
 import { getListingForOwner } from "@/server/listings/listing-service";
 import { getListingAggregate } from "@/server/listings/response-service";
 import { cloudinaryImageUrl } from "@/server/media/cloudinary";
@@ -38,7 +38,8 @@ export default async function EditListingPage({ params }: Props) {
   const canPublish = (listing.status === "DRAFT" || listing.status === "SCHEDULED") && handle;
   const canClose = listing.status === "LIVE" || listing.status === "PAUSED";
   const aggregate = listing.status !== "DRAFT" ? await getListingAggregate(listing.id) : null;
-  const interested = listing.status === "CLOSED" ? await getStillInterestedParticipants(listing.id) : [];
+  const contacts = listing.status !== "DRAFT" ? await getListingParticipantContacts(listing.id) : [];
+  const dateFormatter = new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "numeric" });
 
   return (
     <section className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
@@ -59,6 +60,42 @@ export default async function EditListingPage({ params }: Props) {
       {aggregate && (
         <div className="mt-8">
           <AggregateResult data={aggregate} currency={listing.currency} title="Audience responses (private to you)" />
+        </div>
+      )}
+
+      {listing.status !== "DRAFT" && (
+        <div className="mt-6 rounded-3xl border border-border bg-surface p-7 shadow-sm">
+          <h2 className="text-sm font-black uppercase tracking-wide text-subtle-fg">Interested participants</h2>
+          <p className="mt-1 text-sm text-muted-fg">
+            Everyone who left a verified email to hear about this listing. They agreed to share it with you so you can reach out.
+          </p>
+          {contacts.length === 0 ? (
+            <p className="mt-4 text-sm text-subtle-fg">No one has left their email yet.</p>
+          ) : (
+            <ul className="mt-4 divide-y divide-border overflow-hidden rounded-2xl border border-border">
+              {contacts.map((contact) => (
+                <li key={contact.id} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 bg-surface px-4 py-3">
+                  <a
+                    href={`mailto:${contact.email}`}
+                    className="text-sm font-semibold text-accent-soft-fg hover:underline"
+                  >
+                    {contact.email}
+                  </a>
+                  <span className="flex items-center gap-2">
+                    {contact.stillInterestedAt ? (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/12 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-emerald-700 ring-1 ring-inset ring-emerald-500/25 dark:text-emerald-300">
+                        <span className="size-1.5 rounded-full bg-current" />
+                        Still interested
+                      </span>
+                    ) : (
+                      <span className="text-[11px] font-bold uppercase tracking-wide text-subtle-fg">Opted in</span>
+                    )}
+                    <span className="tnum text-xs text-subtle-fg">{dateFormatter.format(contact.createdAt)}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
 
@@ -113,17 +150,10 @@ export default async function EditListingPage({ params }: Props) {
             {listing.closureFinalPrice != null && ` — ${new Intl.NumberFormat("en-IN", { style: "currency", currency: listing.currency, maximumFractionDigits: 0 }).format(Number(listing.closureFinalPrice))}`}
           </p>
           {listing.closureNote && <p className="mt-1 text-sm text-muted-fg">{listing.closureNote}</p>}
-
-          <h3 className="mt-6 text-xs font-black uppercase tracking-wide text-subtle-fg">Still interested</h3>
-          {interested.length === 0 ? (
-            <p className="mt-2 text-sm text-subtle-fg">No one has confirmed interest yet.</p>
-          ) : (
-            <ul className="mt-2 divide-y divide-border overflow-hidden rounded-2xl border border-border">
-              {interested.map((row) => (
-                <li key={row.id} className="bg-surface px-4 py-2.5 text-sm font-semibold text-fg">{row.email}</li>
-              ))}
-            </ul>
-          )}
+          <p className="mt-4 text-sm text-muted-fg">
+            Participants who confirmed interest after the close are marked{" "}
+            <span className="font-semibold text-emerald-700 dark:text-emerald-300">Still interested</span> in the list above.
+          </p>
         </div>
       )}
     </section>
