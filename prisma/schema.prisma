@@ -80,6 +80,7 @@ enum RateLimitAction {
   CONFIRM_INTERESTED
   EMAIL_OTP_REQUEST
   EMAIL_OTP_VERIFY
+  AI_PRICE_SUGGESTION
 }
 
 enum EmbedProvider {

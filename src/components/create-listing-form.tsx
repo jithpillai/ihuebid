@@ -20,6 +20,37 @@ export function CreateListingForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const [suggestion, setSuggestion] = useState<{ low: number; high: number; rationale: string } | null>(null);
+  const [suggestError, setSuggestError] = useState("");
+  const [suggesting, setSuggesting] = useState(false);
+  const canSuggest = Boolean(fieldValues.make?.trim() && fieldValues.model?.trim() && fieldValues.modelYear?.trim());
+
+  async function suggestRange() {
+    setSuggestError("");
+    setSuggestion(null);
+    setSuggesting(true);
+    try {
+      const response = await fetch("/api/listings/suggest-price", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ currency, locationText, fieldValues }),
+      });
+      const result = await response.json() as { ok: boolean; message?: string; suggestion?: { low: number; high: number; rationale: string } };
+      if (!response.ok || !result.ok || !result.suggestion) throw new Error(result.message ?? "Unable to suggest a range right now.");
+      setSuggestion(result.suggestion);
+    } catch (suggestErr) {
+      setSuggestError(suggestErr instanceof Error ? suggestErr.message : "Unable to suggest a range right now.");
+    } finally {
+      setSuggesting(false);
+    }
+  }
+
+  function useSuggestion() {
+    if (!suggestion) return;
+    setResponseMin(String(Math.round(suggestion.low)));
+    setResponseMax(String(Math.round(suggestion.high)));
+  }
+
   async function submit(event: FormEvent) {
     event.preventDefault();
     setError("");
@@ -147,6 +178,34 @@ export function CreateListingForm() {
               <option value="CREATOR_ONLY">Keep the results private — only I can see them</option>
             </select>
           </label>
+          <div className="sm:col-span-2">
+            <button
+              type="button"
+              onClick={suggestRange}
+              disabled={!canSuggest || suggesting}
+              className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-bold text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {suggesting ? "Asking Gemini…" : "Suggest a range (AI)"}
+            </button>
+            {!canSuggest && <p className="mt-1 text-xs text-zinc-400">Fill in make, model, and model year first.</p>}
+            {suggestError && <p role="alert" className="mt-2 text-sm font-semibold text-red-600">{suggestError}</p>}
+            {suggestion && (
+              <div className="mt-3 rounded-2xl border border-blue-200 bg-blue-50 p-4">
+                <p className="text-sm font-bold text-zinc-900">
+                  Suggested range: {suggestion.low.toLocaleString("en-IN")} – {suggestion.high.toLocaleString("en-IN")} {currency}
+                </p>
+                <p className="mt-1 text-sm text-zinc-600">{suggestion.rationale}</p>
+                <p className="mt-2 text-xs text-zinc-400">Estimate only — not verified market data.</p>
+                <button
+                  type="button"
+                  onClick={useSuggestion}
+                  className="mt-3 rounded-xl bg-blue-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-blue-500"
+                >
+                  Use this range
+                </button>
+              </div>
+            )}
+          </div>
           <label className="block text-sm font-semibold text-zinc-700">
             Response range minimum
             <input

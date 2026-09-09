@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "RateLimitAction" ADD VALUE 'AI_PRICE_SUGGESTION';
