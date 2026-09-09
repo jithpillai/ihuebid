@@ -3,7 +3,7 @@ import "server-only";
 import { db } from "@/lib/db";
 import { AuthError } from "@/server/auth/auth-service";
 import { computeAggregate } from "@/server/listings/aggregation";
-import { snapResponseValue } from "@/server/listings/response-value";
+import { checkRevisionAllowed, snapResponseValue } from "@/server/listings/response-value";
 
 export async function submitAnonymousValuation(listingId: string, participantIdentityId: string, rawValue: number) {
   if (!Number.isFinite(rawValue)) throw new AuthError("INVALID_VALUE", "Enter a valid amount.");
@@ -23,6 +23,18 @@ export async function submitAnonymousValuation(listingId: string, participantIde
     Number(listing.responseMax),
     Number(listing.responseIncrement),
   );
+
+  const existing = await db.response.findUnique({
+    where: { listingId_participantIdentityId: { listingId, participantIdentityId } },
+    select: { revisionCount: true, updatedAt: true },
+  });
+  const revisionCheck = checkRevisionAllowed(existing);
+  if (!revisionCheck.ok) {
+    if (revisionCheck.reason === "MAX_REVISIONS") {
+      throw new AuthError("MAX_REVISIONS_REACHED", "You've revised this estimate as many times as we allow.", 429);
+    }
+    throw new AuthError("REVISION_COOLDOWN", `Please wait a bit before revising your estimate again.`, 429);
+  }
 
   return db.response.upsert({
     where: { listingId_participantIdentityId: { listingId, participantIdentityId } },

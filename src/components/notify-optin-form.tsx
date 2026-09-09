@@ -12,6 +12,9 @@ export function NotifyOptInForm({ listingId, initiallyOptedIn }: { listingId: st
   const [error, setError] = useState("");
   const [developmentCode, setDevelopmentCode] = useState("");
   const [loading, setLoading] = useState(false);
+  // Honeypot: invisible to real visitors, a scraping bot that blindly fills
+  // every input trips it.
+  const [company, setCompany] = useState("");
 
   if (optedIn) {
     return (
@@ -29,7 +32,7 @@ export function NotifyOptInForm({ listingId, initiallyOptedIn }: { listingId: st
       const response = await fetch(`/api/listings/${listingId}/notify-opt-in/request`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, company }),
       });
       const result = await response.json() as { ok: boolean; message?: string; developmentCode?: string };
       if (!response.ok || !result.ok) throw new Error(result.message ?? "Unable to send a code.");
@@ -65,6 +68,16 @@ export function NotifyOptInForm({ listingId, initiallyOptedIn }: { listingId: st
   return (
     <form onSubmit={step === "email" ? requestCode : verifyCode} className="relative rounded-2xl border border-zinc-200 bg-white p-4">
       <PendingOverlay show={loading} label="Please wait…" />
+      <input
+        type="text"
+        name="company"
+        value={company}
+        onChange={(event) => setCompany(event.target.value)}
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        className="absolute -left-[9999px] size-px opacity-0"
+      />
       <p className="text-sm font-semibold text-zinc-700">Notify me when this closes</p>
       {step === "email" ? (
         <div className="mt-2 flex flex-col gap-2 sm:flex-row">

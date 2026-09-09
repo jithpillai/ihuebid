@@ -73,6 +73,15 @@ enum ClosureVisibility {
   CLOSED_ONLY
 }
 
+enum RateLimitAction {
+  SUBMIT_RESPONSE
+  NOTIFY_OPT_IN_REQUEST
+  NOTIFY_OPT_IN_VERIFY
+  CONFIRM_INTERESTED
+  EMAIL_OTP_REQUEST
+  EMAIL_OTP_VERIFY
+}
+
 enum EmbedProvider {
   YOUTUBE
 }
@@ -340,4 +349,17 @@ model NotificationOptIn {
   @@unique([listingId, participantIdentityId])
   @@index([listingId, verifiedAt])
   @@map("notification_opt_ins")
+}
+
+// Same shape as ihueRating's InternalTesterSignupAttempt: count recent rows
+// for (action, ipHash), reject over threshold, else insert one. IPs are
+// never stored raw — always HMAC-hashed first (requirements §9.1).
+model RateLimitAttempt {
+  id        String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  action    RateLimitAction
+  ipHash    String          @map("ip_hash") @db.VarChar(128)
+  createdAt DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([action, ipHash, createdAt])
+  @@map("rate_limit_attempts")
 }

@@ -42,6 +42,9 @@ export function ValuationForm({
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
+  // Honeypot: invisible to real visitors, a scraping bot that blindly fills
+  // every input trips it. Never rendered visibly, never reachable by tab.
+  const [company, setCompany] = useState("");
 
   if (status !== "LIVE") {
     return (
@@ -59,7 +62,7 @@ export function ValuationForm({
       const response = await fetch(`/api/listings/${listingId}/responses`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ value }),
+        body: JSON.stringify({ value, company }),
       });
       const result = await response.json() as { ok: boolean; message?: string; value?: number };
       if (!response.ok || !result.ok || result.value === undefined) throw new Error(result.message ?? "Unable to submit your estimate.");
@@ -79,6 +82,16 @@ export function ValuationForm({
 
   return (
     <div className="flex flex-col items-center">
+      <input
+        type="text"
+        name="company"
+        value={company}
+        onChange={(event) => setCompany(event.target.value)}
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        className="absolute -left-[9999px] size-px opacity-0"
+      />
       <p className="text-sm font-semibold text-zinc-500">What is this worth to you?</p>
       <div className="mt-4">
         <PriceSlider value={value} range={{ min, max, step: increment }} onChange={setValue} formatValue={formatValue} disabled={loading} />
