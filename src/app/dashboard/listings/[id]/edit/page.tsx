@@ -8,6 +8,7 @@ import { ListingGalleryUploader } from "@/components/listing-gallery-uploader";
 import { ListingForm } from "@/components/listing-form";
 import { ListingReferenceLinks } from "@/components/listing-reference-links";
 import { PendingLink } from "@/components/pending-link";
+import { PosterPromptPanel } from "@/components/poster-prompt-panel";
 import { PublishListingButton } from "@/components/publish-listing-button";
 import { ShareListingPanel } from "@/components/share-listing-panel";
 import { CollapsibleSection } from "@/components/ui/collapsible-section";
@@ -16,9 +17,10 @@ import { AuthError } from "@/server/auth/auth-service";
 import { getCurrentSession } from "@/server/auth/session";
 import { getListingParticipantContacts } from "@/server/listings/interest-service";
 import { getListingForOwner } from "@/server/listings/listing-service";
+import { buildPosterPrompt } from "@/server/listings/poster-prompt";
 import { getListingAggregate } from "@/server/listings/response-service";
 import { buildListingShareMessage } from "@/server/listings/share-message";
-import { cloudinaryImageUrl } from "@/server/media/cloudinary";
+import { cloudinaryDownloadUrl, cloudinaryImageUrl } from "@/server/media/cloudinary";
 
 export const metadata: Metadata = { title: "Edit listing", robots: { index: false, follow: false } };
 
@@ -81,6 +83,40 @@ export default async function EditListingPage({ params }: Props) {
       })
     : null;
 
+  const posterImages = [
+    ...listing.mediaAssets.map((asset, index) => ({
+      label: index === 0 ? "Cover photo" : `Photo ${index + 1}`,
+      thumbUrl: cloudinaryImageUrl({ publicId: asset.publicId }),
+      downloadUrl: cloudinaryDownloadUrl({ publicId: asset.publicId }),
+    })),
+    ...(profile?.avatarPublicId
+      ? [{
+          label: "Your logo",
+          thumbUrl: cloudinaryImageUrl({ publicId: profile.avatarPublicId, deliveryType: "authenticated" }),
+          downloadUrl: cloudinaryDownloadUrl({ publicId: profile.avatarPublicId, deliveryType: "authenticated" }),
+        }]
+      : []),
+  ];
+  const posterPrompt = listing.mediaAssets.length > 0
+    ? buildPosterPrompt({
+        listing: {
+          title: listing.title,
+          fieldValues: listingFormInitial.fieldValues,
+          ownerExpectedPrice: listing.ownerExpectedPrice != null ? Number(listing.ownerExpectedPrice) : null,
+          currency: listing.currency,
+          locationText: listing.locationText,
+          description: listing.description,
+        },
+        profile: {
+          brandName: profile?.brandName ?? null,
+          location: profile?.location ?? null,
+          contactPhone: profile?.contactPhone ?? null,
+        },
+        hasLogo: Boolean(profile?.avatarPublicId),
+        photoCount: listing.mediaAssets.length,
+      })
+    : null;
+
   return (
     <section className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
       <PendingLink href="/dashboard" className="text-sm font-semibold text-muted-fg transition hover:text-fg">
@@ -126,6 +162,16 @@ export default async function EditListingPage({ params }: Props) {
             />
           </div>
         </div>
+      )}
+
+      {posterPrompt && (
+        <CollapsibleSection
+          title="Ad poster prompt (AI)"
+          description="A copy-paste prompt for Gemini or ChatGPT that turns this listing into a “spotlight deal” poster image."
+          className="mt-6"
+        >
+          <PosterPromptPanel key={posterPrompt} generatedPrompt={posterPrompt} images={posterImages} />
+        </CollapsibleSection>
       )}
 
       {aggregate && (

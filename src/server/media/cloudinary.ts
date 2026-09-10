@@ -38,6 +38,19 @@ export function cloudinaryBannerUrl(publicId: string): string {
   return cloudinaryFillUrl(publicId, 1920, 480);
 }
 
+// Original asset with a `Content-Disposition: attachment` header, so a plain
+// link downloads the full-resolution file (used for the ad-poster prompt flow,
+// where the creator hands the raw photo / logo to an external AI tool).
+export function cloudinaryDownloadUrl(asset: { publicId: string; deliveryType?: string }): string {
+  const { cloudinary } = cloudinaryConfig();
+  return cloudinary.url(asset.publicId, {
+    secure: true,
+    type: asset.deliveryType ?? "upload",
+    sign_url: asset.deliveryType === "authenticated",
+    flags: "attachment",
+  });
+}
+
 export function cloudinaryImageUrl(asset: { publicId: string; version?: number; format?: string; deliveryType?: string }, transformation = "f_auto,q_auto") {
   const { cloudinary } = cloudinaryConfig();
   return cloudinary.url(asset.publicId, {
