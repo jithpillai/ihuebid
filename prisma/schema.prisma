@@ -291,6 +291,10 @@ enum ResponseMode {
 model ParticipantIdentity {
   id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tokenHash String   @unique @map("token_hash") @db.VarChar(128)
+  // Remembered display name, so a returning participant doesn't retype it on
+  // every listing. Set whenever a non-empty name is supplied on a submission,
+  // independent of whether that particular estimate was left anonymous.
+  displayName String? @map("display_name") @db.VarChar(80)
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
   responses          Response[]
@@ -305,6 +309,11 @@ model Response {
   participantIdentityId String       @map("participant_identity_id") @db.Uuid
   mode                  ResponseMode @default(ANONYMOUS_VALUATION)
   value                 Decimal      @db.Decimal(14, 2)
+  // Per-response name snapshot. Non-null ⇔ this estimate is "named" (shown
+  // next to its value on the Market Signal). Snapshotted rather than read live
+  // off ParticipantIdentity.displayName so anonymity is a per-listing choice
+  // and a later name change never rewrites past estimates.
+  contributorName       String?      @map("contributor_name") @db.VarChar(80)
   revisionCount         Int          @default(0) @map("revision_count")
   createdAt             DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt             DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)

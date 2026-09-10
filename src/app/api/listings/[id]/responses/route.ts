@@ -12,20 +12,24 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     assertSameOrigin(request);
     await checkRateLimit("SUBMIT_RESPONSE", request, { windowMinutes: 15, maxAttempts: 30 });
     const { id } = await params;
-    const body = await request.json() as { value?: unknown; company?: unknown };
+    const body = await request.json() as { value?: unknown; name?: unknown; anonymous?: unknown; company?: unknown };
 
     // Honeypot: real participants never fill this hidden field. Report
     // success without persisting anything, so a bot doesn't learn it tripped.
     if (typeof body.company === "string" && body.company.length > 0) {
-      return Response.json({ ok: true, value: typeof body.value === "number" ? body.value : 0 });
+      return Response.json({ ok: true, value: typeof body.value === "number" ? body.value : 0, contributorName: null });
     }
 
     if (typeof body.value !== "number") throw new AuthError("INVALID_VALUE", "Enter a valid amount.");
 
     const { id: participantIdentityId, newToken } = await resolveOrCreateParticipantIdentity();
-    const response = await submitAnonymousValuation(id, participantIdentityId, body.value);
+    const response = await submitAnonymousValuation(id, participantIdentityId, {
+      rawValue: body.value,
+      name: body.name,
+      stayAnonymous: body.anonymous === true,
+    });
 
-    const result = NextResponse.json({ ok: true, value: Number(response.value) });
+    const result = NextResponse.json({ ok: true, value: Number(response.value), contributorName: response.contributorName });
     if (newToken) {
       result.cookies.set(getParticipantCookieName(), newToken, getParticipantCookieOptions());
     }

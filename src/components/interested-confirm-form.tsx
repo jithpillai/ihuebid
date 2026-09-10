@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import { PendingOverlay } from "@/components/pending-feedback";
+
 export function InterestedConfirmForm({ token, creatorDisplayName }: { token: string; creatorDisplayName: string }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -35,7 +37,8 @@ export function InterestedConfirmForm({ token, creatorDisplayName }: { token: st
   }
 
   return (
-    <div className="mt-8 flex flex-col items-center gap-3">
+    <div className="relative mt-8 flex flex-col items-center gap-3">
+      <PendingOverlay show={loading} label="Sending…" />
       <button
         type="button"
         disabled={loading}

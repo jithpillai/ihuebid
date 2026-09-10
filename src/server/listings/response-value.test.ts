@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { MAX_RESPONSE_REVISIONS, RESPONSE_REVISION_COOLDOWN_SECONDS, checkRevisionAllowed, snapResponseValue } from "./response-value";
+import { MAX_RESPONSE_REVISIONS, RESPONSE_REVISION_COOLDOWN_SECONDS, checkRevisionAllowed, normalizeContributorName, snapResponseValue } from "./response-value";
 
 describe("snapResponseValue", () => {
   it("snaps to the nearest increment", () => {
@@ -22,6 +22,23 @@ describe("snapResponseValue", () => {
 
   it("falls back to clamping only when increment is zero or negative", () => {
     expect(snapResponseValue(812345, 700000, 900000, 0)).toBe(812345);
+  });
+});
+
+describe("normalizeContributorName", () => {
+  it("trims and collapses inner whitespace", () => {
+    expect(normalizeContributorName("  Priya   Nair  ")).toBe("Priya Nair");
+  });
+
+  it("returns null for blank, whitespace-only, or non-string input", () => {
+    expect(normalizeContributorName("")).toBeNull();
+    expect(normalizeContributorName("   ")).toBeNull();
+    expect(normalizeContributorName(undefined)).toBeNull();
+    expect(normalizeContributorName(42)).toBeNull();
+  });
+
+  it("caps length at 80 characters", () => {
+    expect(normalizeContributorName("a".repeat(200))).toHaveLength(80);
   });
 });
 

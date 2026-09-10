@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { computeAggregate } from "./aggregation";
+import { computeAggregate, partitionNamedValues } from "./aggregation";
 
 const RANGE = { min: 700000, max: 900000 };
 
@@ -89,6 +89,16 @@ describe("computeAggregate", () => {
       const result = computeAggregate(tightValues, { ...RANGE });
       expect(result.comparison).toBeNull();
     });
+  });
+
+  it("partitions rows into all values and named-only values", () => {
+    const { all, named } = partitionNamedValues([
+      { value: 100, contributorName: "Asha" },
+      { value: 200, contributorName: null },
+      { value: 400, contributorName: "Ravi" },
+    ]);
+    expect(all).toEqual([100, 200, 400]);
+    expect(named).toEqual([100, 400]);
   });
 
   it("buckets values into fixed-width distribution bins", () => {

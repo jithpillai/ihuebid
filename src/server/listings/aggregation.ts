@@ -18,12 +18,36 @@ export type AggregateResultData = {
   comparison: Comparison | null;
 };
 
+// The full Market Signal payload: the aggregate computed over every response,
+// the aggregate over named-only responses (for the "Skip anonymous" toggle),
+// the split counts, and the list of named estimates with their values.
+export type ListingAggregate = {
+  all: AggregateResultData;
+  named: AggregateResultData;
+  counts: { named: number; anonymous: number };
+  namedEstimates: { name: string; value: number }[];
+};
+
 // Starting heuristics, not final — see CLAUDE.md.
 const CONFIDENCE_MEDIUM_MIN_COUNT = 5;
 const CONFIDENCE_HIGH_MIN_COUNT = 15;
 const WIDE_DISPERSION_BAND_TO_CONSENSUS_RATIO = 0.35;
 const GREEN_MAX_ABOVE_PERCENT = 0.05;
 const YELLOW_MAX_ABOVE_PERCENT = 0.15;
+
+// Split raw response rows into "all values" and "named-only values" so the
+// Market Signal can be recomputed either way (the "Skip anonymous" toggle).
+export function partitionNamedValues(
+  rows: { value: number; contributorName: string | null }[],
+): { all: number[]; named: number[] } {
+  const all: number[] = [];
+  const named: number[] = [];
+  for (const row of rows) {
+    all.push(row.value);
+    if (row.contributorName) named.push(row.value);
+  }
+  return { all, named };
+}
 
 function percentile(sorted: number[], p: number): number {
   if (sorted.length === 1) return sorted[0];

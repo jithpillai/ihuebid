@@ -2,10 +2,21 @@ import "server-only";
 
 import { db } from "@/lib/db";
 import { AuthError } from "@/server/auth/auth-service";
-import { computeAggregate } from "@/server/listings/aggregation";
-import { checkRevisionAllowed, snapResponseValue } from "@/server/listings/response-value";
+import { computeAggregate, partitionNamedValues, type ListingAggregate } from "@/server/listings/aggregation";
+import { checkRevisionAllowed, normalizeContributorName, snapResponseValue } from "@/server/listings/response-value";
 
-export async function submitAnonymousValuation(listingId: string, participantIdentityId: string, rawValue: number) {
+export type SubmitValuationInput = {
+  rawValue: number;
+  name: unknown;
+  stayAnonymous: boolean;
+};
+
+export async function submitAnonymousValuation(
+  listingId: string,
+  participantIdentityId: string,
+  input: SubmitValuationInput,
+) {
+  const { rawValue, name, stayAnonymous } = input;
   if (!Number.isFinite(rawValue)) throw new AuthError("INVALID_VALUE", "Enter a valid amount.");
 
   const listing = await db.listing.findUnique({
@@ -24,6 +35,11 @@ export async function submitAnonymousValuation(listingId: string, participantIde
     Number(listing.responseIncrement),
   );
 
+  const normalizedName = normalizeContributorName(name);
+  // The checkbox only controls whether this estimate is attributed. The name
+  // itself is still remembered for next time whenever one was supplied.
+  const contributorName = stayAnonymous ? null : normalizedName;
+
   const existing = await db.response.findUnique({
     where: { listingId_participantIdentityId: { listingId, participantIdentityId } },
     select: { revisionCount: true, updatedAt: true },
@@ -36,27 +52,41 @@ export async function submitAnonymousValuation(listingId: string, participantIde
     throw new AuthError("REVISION_COOLDOWN", `Please wait a bit before revising your estimate again.`, 429);
   }
 
+  if (normalizedName) {
+    await db.participantIdentity.update({
+      where: { id: participantIdentityId },
+      data: { displayName: normalizedName },
+    });
+  }
+
   return db.response.upsert({
     where: { listingId_participantIdentityId: { listingId, participantIdentityId } },
-    create: { listingId, participantIdentityId, value, mode: "ANONYMOUS_VALUATION" },
-    update: { value, revisionCount: { increment: 1 } },
+    create: { listingId, participantIdentityId, value, contributorName, mode: "ANONYMOUS_VALUATION" },
+    update: { value, contributorName, revisionCount: { increment: 1 } },
   });
 }
 
-export async function getAnonymousValuation(listingId: string, participantIdentityId: string | null): Promise<number | null> {
+export type ParticipantValuation = { value: number; contributorName: string | null };
+
+export async function getParticipantValuation(
+  listingId: string,
+  participantIdentityId: string | null,
+): Promise<ParticipantValuation | null> {
   if (!participantIdentityId) return null;
   const response = await db.response.findUnique({
     where: { listingId_participantIdentityId: { listingId, participantIdentityId } },
-    select: { value: true },
+    select: { value: true, contributorName: true },
   });
-  return response ? Number(response.value) : null;
+  return response ? { value: Number(response.value), contributorName: response.contributorName } : null;
 }
+
+export type { ListingAggregate } from "@/server/listings/aggregation";
 
 // The single source of truth for "which rows count toward the aggregate" —
 // both the public listing page and the creator dashboard call this rather
 // than querying Response directly, so the ANONYMOUS_VALUATION filter can
 // never drift out of sync between the two surfaces.
-export async function getListingAggregate(listingId: string) {
+export async function getListingAggregate(listingId: string): Promise<ListingAggregate> {
   const listing = await db.listing.findUnique({
     where: { id: listingId },
     select: { responseMin: true, responseMax: true, ownerExpectedPrice: true },
@@ -65,15 +95,27 @@ export async function getListingAggregate(listingId: string) {
 
   const responses = await db.response.findMany({
     where: { listingId, mode: "ANONYMOUS_VALUATION" },
-    select: { value: true },
+    select: { value: true, contributorName: true },
   });
 
-  return computeAggregate(
-    responses.map((response) => Number(response.value)),
-    {
-      min: Number(listing.responseMin),
-      max: Number(listing.responseMax),
-      expectedPrice: listing.ownerExpectedPrice != null ? Number(listing.ownerExpectedPrice) : undefined,
-    },
-  );
+  const rows = responses.map((response) => ({
+    value: Number(response.value),
+    contributorName: response.contributorName,
+  }));
+  const { all, named } = partitionNamedValues(rows);
+  const options = {
+    min: Number(listing.responseMin),
+    max: Number(listing.responseMax),
+    expectedPrice: listing.ownerExpectedPrice != null ? Number(listing.ownerExpectedPrice) : undefined,
+  };
+
+  return {
+    all: computeAggregate(all, options),
+    named: computeAggregate(named, options),
+    counts: { named: named.length, anonymous: all.length - named.length },
+    namedEstimates: rows
+      .filter((row): row is { value: number; contributorName: string } => Boolean(row.contributorName))
+      .map((row) => ({ name: row.contributorName, value: row.value }))
+      .sort((a, b) => a.value - b.value),
+  };
 }

@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { AggregateResult } from "@/components/aggregate-result";
+import { AggregateResultPanel } from "@/components/aggregate-result-panel";
 import { NotifyOptInForm } from "@/components/notify-optin-form";
+import { PendingLink } from "@/components/pending-link";
 import { ValuationForm } from "@/components/valuation-form";
 import { StatusPill } from "@/components/ui/pill";
 import { getListingByPublicId } from "@/server/listings/listing-service";
-import { getAnonymousValuation, getListingAggregate } from "@/server/listings/response-service";
+import { getListingAggregate, getParticipantValuation } from "@/server/listings/response-service";
 import { usedVehicleFieldByKey } from "@/server/listings/templates/used-vehicle";
 import { cloudinaryImageUrl } from "@/server/media/cloudinary";
-import { getParticipantIdentityId } from "@/server/participant/identity-service";
+import { getParticipantIdentity } from "@/server/participant/identity-service";
 import { getNotificationOptIn } from "@/server/participant/notification-service";
 
 const CLOSURE_OUTCOME_LABEL: Record<string, string> = {
@@ -56,8 +56,9 @@ export default async function PublicListingPage({ params }: Props) {
     .map((value) => ({ field: usedVehicleFieldByKey(value.fieldKey), value: value.fieldValue }))
     .filter((entry): entry is { field: NonNullable<typeof entry.field>; value: string } => Boolean(entry.field));
   const embed = listing.embeds[0];
-  const participantIdentityId = await getParticipantIdentityId();
-  const existingValuation = await getAnonymousValuation(listing.id, participantIdentityId);
+  const participantIdentity = await getParticipantIdentity();
+  const participantIdentityId = participantIdentity?.id ?? null;
+  const existingValuation = await getParticipantValuation(listing.id, participantIdentityId);
   const notificationOptIn = await getNotificationOptIn(listing.id, participantIdentityId);
   const aggregate = listing.resultVisibility === "PUBLIC" ? await getListingAggregate(listing.id) : null;
   // HIDDEN_UNTIL_RESPONSE: reveal the owner's expectation only once this
@@ -71,9 +72,9 @@ export default async function PublicListingPage({ params }: Props) {
 
   return (
     <article className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
-      <Link href={`/${handle}`} className="text-sm font-semibold text-muted-fg transition hover:text-fg">
+      <PendingLink href={`/${handle}`} className="text-sm font-semibold text-muted-fg transition hover:text-fg">
         ← {listing.creator.displayName}
-      </Link>
+      </PendingLink>
 
       <div className="mt-3 flex flex-wrap items-center gap-3">
         <h1 className="text-3xl font-black tracking-tight text-fg sm:text-4xl">{listing.title}</h1>
@@ -207,7 +208,9 @@ export default async function PublicListingPage({ params }: Props) {
                   min={Number(listing.responseMin)}
                   max={Number(listing.responseMax)}
                   increment={Number(listing.responseIncrement)}
-                  initialValue={existingValuation}
+                  initialValue={existingValuation?.value ?? null}
+                  initialName={existingValuation?.contributorName ?? participantIdentity?.displayName ?? null}
+                  initialAnonymous={existingValuation != null && existingValuation.contributorName === null}
                 />
               </div>
               {listing.status === "LIVE" && existingValuation !== null && (
@@ -220,7 +223,7 @@ export default async function PublicListingPage({ params }: Props) {
 
           {aggregate && (
             <div className="mt-4">
-              <AggregateResult data={aggregate} currency={listing.currency} showComparison={showOwnerPrice} />
+              <AggregateResultPanel aggregate={aggregate} currency={listing.currency} showComparison={showOwnerPrice} />
             </div>
           )}
         </div>

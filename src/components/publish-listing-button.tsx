@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import { PendingOverlay } from "@/components/pending-feedback";
+
 export function PublishListingButton({ listingId, publicId, handle }: { listingId: string; publicId: string; handle: string }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -21,7 +23,8 @@ export function PublishListingButton({ listingId, publicId, handle }: { listingI
   }
 
   return (
-    <div>
+    <div className="relative">
+      <PendingOverlay show={loading} label="Publishing…" />
       <button
         type="button"
         onClick={publish}

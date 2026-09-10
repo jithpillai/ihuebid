@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
-import { AggregateResult } from "@/components/aggregate-result";
+import { AggregateResultPanel } from "@/components/aggregate-result-panel";
 import { CloseListingForm } from "@/components/close-listing-form";
 import { ListingEmbedForm } from "@/components/listing-embed-form";
 import { ListingGalleryUploader } from "@/components/listing-gallery-uploader";
 import { ListingReferenceLinks } from "@/components/listing-reference-links";
+import { PendingLink } from "@/components/pending-link";
 import { PublishListingButton } from "@/components/publish-listing-button";
 import { StatusPill } from "@/components/ui/pill";
 import { AuthError } from "@/server/auth/auth-service";
@@ -43,23 +43,23 @@ export default async function EditListingPage({ params }: Props) {
 
   return (
     <section className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
-      <Link href="/dashboard" className="text-sm font-semibold text-muted-fg transition hover:text-fg">
+      <PendingLink href="/dashboard" className="text-sm font-semibold text-muted-fg transition hover:text-fg">
         ← Your listings
-      </Link>
+      </PendingLink>
       <div className="mt-2 flex flex-wrap items-center gap-3">
         <h1 className="text-3xl font-black tracking-tight text-fg">{listing.title}</h1>
         <StatusPill status={listing.status} />
       </div>
 
       {(listing.status === "LIVE" || listing.status === "PAUSED" || listing.status === "CLOSED") && handle && (
-        <Link href={`/${handle}/${listing.publicId}`} className="mt-2 inline-block text-sm font-semibold text-accent-soft-fg hover:underline">
+        <PendingLink href={`/${handle}/${listing.publicId}`} className="mt-2 inline-block text-sm font-semibold text-accent-soft-fg hover:underline">
           View public listing →
-        </Link>
+        </PendingLink>
       )}
 
       {aggregate && (
         <div className="mt-8">
-          <AggregateResult data={aggregate} currency={listing.currency} title="Audience responses (private to you)" />
+          <AggregateResultPanel aggregate={aggregate} currency={listing.currency} title="Audience responses (private to you)" />
         </div>
       )}
 

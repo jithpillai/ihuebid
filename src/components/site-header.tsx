@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { PendingLink } from "@/components/pending-link";
 import { ProfileMenu } from "@/components/profile-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { buttonClasses } from "@/components/ui/button";
@@ -25,15 +26,15 @@ export async function SiteHeader() {
           <ThemeToggle />
           {session ? (
             <>
-              <Link
+              <PendingLink
                 href="/dashboard"
                 className="hidden rounded-full px-3 py-2 text-sm font-bold text-muted-fg transition hover:bg-muted hover:text-fg sm:inline-flex"
               >
                 Dashboard
-              </Link>
-              <Link href="/dashboard/listings/new" className={buttonClasses({ size: "sm" })}>
+              </PendingLink>
+              <PendingLink href="/dashboard/listings/new" className={buttonClasses({ size: "sm" })}>
                 New listing
-              </Link>
+              </PendingLink>
               <ProfileMenu displayName={session.user.displayName} />
             </>
           ) : (
@@ -44,9 +45,9 @@ export async function SiteHeader() {
               >
                 How it works
               </Link>
-              <Link href="/login" className={buttonClasses({ size: "sm" })}>
+              <PendingLink href="/login" className={buttonClasses({ size: "sm" })}>
                 Sign in
-              </Link>
+              </PendingLink>
             </>
           )}
         </nav>

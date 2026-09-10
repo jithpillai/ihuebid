@@ -8,6 +8,18 @@ export function snapResponseValue(rawValue: number, min: number, max: number, in
   return Math.min(max, Math.max(min, snapped));
 }
 
+// Pure: normalize a submitted participant name. Trims, collapses inner
+// whitespace, caps length. Returns null for anything that isn't a usable name
+// so callers can treat "no name" and "blank name" identically.
+export const MAX_CONTRIBUTOR_NAME_LENGTH = 80;
+
+export function normalizeContributorName(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  const collapsed = raw.replace(/\s+/g, " ").trim();
+  if (!collapsed) return null;
+  return collapsed.slice(0, MAX_CONTRIBUTOR_NAME_LENGTH);
+}
+
 // Requirements §9.1: "Permit edits only with a cooldown and sensible maximum
 // revision count" — a real cap, not just the revisionCount tracked on the
 // row. First-time submission is never gated, only revisions.

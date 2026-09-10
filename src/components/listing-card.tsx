@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { CardNavOverlay } from "@/components/pending-link";
 import { StatusPill } from "@/components/ui/pill";
 
 export function ListingCard({
@@ -23,8 +24,9 @@ export function ListingCard({
   return (
     <Link
       href={href}
-      className="group flex flex-col overflow-hidden rounded-3xl border border-border bg-surface shadow-sm shadow-black/[0.03] transition hover:-translate-y-0.5 hover:border-border-strong hover:shadow-md dark:shadow-black/20"
+      className="group relative flex flex-col overflow-hidden rounded-3xl border border-border bg-surface shadow-sm shadow-black/[0.03] transition hover:-translate-y-0.5 hover:border-border-strong hover:shadow-md dark:shadow-black/20"
     >
+      <CardNavOverlay />
       <div className="relative aspect-[16/10] overflow-hidden bg-muted">
         {coverUrl ? (
           <Image
