@@ -35,6 +35,63 @@ export function usedVehicleFieldByKey(key: string): TemplateField | undefined {
   return USED_VEHICLE_FIELDS.find((field) => field.key === key);
 }
 
+// --- Title / description suggestions -----------------------------------------
+// Pure, deterministic. The create-listing form offers these as an "Apply"
+// suggestion (never auto-filling) and only while the target field is still
+// empty, so later edits to the details can't silently rewrite what the
+// creator typed.
+
+function cleanValue(raw: string | undefined): string {
+  return (raw ?? "").replace(/\s+/g, " ").trim();
+}
+
+function asSentence(raw: string): string {
+  const text = cleanValue(raw);
+  if (!text) return "";
+  const capitalized = text.charAt(0).toUpperCase() + text.slice(1);
+  return /[.!?]$/.test(capitalized) ? capitalized : `${capitalized}.`;
+}
+
+// Model year + Make + Model + Variant + Fuel + Transmission, skipping any
+// part the creator hasn't filled in.
+export function suggestListingTitle(values: Record<string, string>): string {
+  return ["modelYear", "make", "model", "variant", "fuelType", "transmission"]
+    .map((key) => cleanValue(values[key]))
+    .filter(Boolean)
+    .join(" ");
+}
+
+// A short prose description from the registration year, kilometres, owner
+// count, and any free-text notes the creator has already written.
+export function suggestListingDescription(values: Record<string, string>): string {
+  const facts: string[] = [];
+
+  const registrationYear = cleanValue(values.registrationYear);
+  if (registrationYear) facts.push(`registered in ${registrationYear}`);
+
+  const kmDriven = cleanValue(values.kmDriven);
+  if (kmDriven && !Number.isNaN(Number(kmDriven))) {
+    facts.push(`${Number(kmDriven).toLocaleString("en-IN")} km driven`);
+  }
+
+  const ownershipCount = cleanValue(values.ownershipCount);
+  if (ownershipCount && !Number.isNaN(Number(ownershipCount))) {
+    const count = Number(ownershipCount);
+    facts.push(count === 1 ? "single owner" : `${count} owners`);
+  }
+
+  const parts: string[] = [];
+  if (facts.length > 0) {
+    parts.push(asSentence(facts.join(", ")));
+  }
+  for (const key of ["serviceHistory", "accidentDisclosure", "knownDefects"]) {
+    const extra = asSentence(values[key]);
+    if (extra) parts.push(extra);
+  }
+
+  return parts.join(" ");
+}
+
 export function validateUsedVehicleFieldValues(values: Record<string, string>): string[] {
   const errors: string[] = [];
   for (const field of USED_VEHICLE_FIELDS) {

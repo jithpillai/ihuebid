@@ -5,6 +5,7 @@ import { FormEvent, useState } from "react";
 import { ListingFieldInputs } from "@/components/listing-field-inputs";
 import { PendingOverlay } from "@/components/pending-feedback";
 import { hasSufficientFactsForSuggestion } from "@/server/ai/price-suggestion";
+import { suggestListingDescription, suggestListingTitle } from "@/server/listings/templates/used-vehicle";
 
 export function CreateListingForm() {
   const [title, setTitle] = useState("");
@@ -25,6 +26,12 @@ export function CreateListingForm() {
   const [suggestError, setSuggestError] = useState("");
   const [suggesting, setSuggesting] = useState(false);
   const canSuggest = hasSufficientFactsForSuggestion(fieldValues);
+
+  // Offered as an "Apply" suggestion, never auto-filled — and only while the
+  // field is still empty, so editing the details later can't overwrite what
+  // the creator has already typed.
+  const titleSuggestion = title.trim() === "" ? suggestListingTitle(fieldValues) : "";
+  const descriptionSuggestion = description.trim() === "" ? suggestListingDescription(fieldValues) : "";
 
   async function suggestRange() {
     setSuggestError("");
@@ -89,7 +96,15 @@ export function CreateListingForm() {
       <PendingOverlay show={loading} label="Creating…" />
 
       <div>
+        <h2 className="text-sm font-black uppercase tracking-wide text-subtle-fg">Vehicle details</h2>
+        <div className="mt-4">
+          <ListingFieldInputs values={fieldValues} onChange={(key, value) => setFieldValues((prev) => ({ ...prev, [key]: value }))} />
+        </div>
+      </div>
+
+      <div>
         <h2 className="text-sm font-black uppercase tracking-wide text-subtle-fg">Listing basics</h2>
+        <p className="mt-1 text-xs text-subtle-fg">Built from the vehicle details above — tweak anything you like.</p>
         <div className="mt-4 space-y-4">
           <label className="block text-sm font-semibold text-body">
             Title
@@ -101,6 +116,20 @@ export function CreateListingForm() {
               placeholder="e.g. 2021 Toyota Fortuner, Automatic"
               className="mt-2 w-full rounded-2xl border border-border-strong bg-surface px-4 py-3 text-fg outline-none placeholder:text-subtle-fg focus:border-accent"
             />
+            {titleSuggestion && (
+              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-accent-soft-fg/30 bg-accent-soft px-3 py-2">
+                <span className="text-xs text-muted-fg">
+                  Suggested: <span className="font-semibold text-fg">{titleSuggestion}</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setTitle(titleSuggestion)}
+                  className="rounded-lg bg-accent px-2.5 py-1 text-xs font-bold text-accent-fg transition hover:brightness-110"
+                >
+                  Apply
+                </button>
+              </div>
+            )}
           </label>
           <label className="block text-sm font-semibold text-body">
             Description <span className="font-normal text-subtle-fg">(optional)</span>
@@ -111,6 +140,20 @@ export function CreateListingForm() {
               maxLength={4000}
               className="mt-2 w-full resize-none rounded-2xl border border-border-strong bg-surface px-4 py-3 text-fg outline-none focus:border-accent"
             />
+            {descriptionSuggestion && (
+              <div className="mt-2 rounded-xl border border-accent-soft-fg/30 bg-accent-soft px-3 py-2">
+                <p className="text-xs text-muted-fg">
+                  Suggested: <span className="font-semibold text-fg">{descriptionSuggestion}</span>
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setDescription(descriptionSuggestion)}
+                  className="mt-2 rounded-lg bg-accent px-2.5 py-1 text-xs font-bold text-accent-fg transition hover:brightness-110"
+                >
+                  Apply
+                </button>
+              </div>
+            )}
           </label>
           <label className="block text-sm font-semibold text-body">
             Location <span className="font-normal text-subtle-fg">(optional)</span>
@@ -122,13 +165,6 @@ export function CreateListingForm() {
               className="mt-2 w-full rounded-2xl border border-border-strong bg-surface px-4 py-3 text-fg outline-none placeholder:text-subtle-fg focus:border-accent"
             />
           </label>
-        </div>
-      </div>
-
-      <div>
-        <h2 className="text-sm font-black uppercase tracking-wide text-subtle-fg">Vehicle details</h2>
-        <div className="mt-4">
-          <ListingFieldInputs values={fieldValues} onChange={(key, value) => setFieldValues((prev) => ({ ...prev, [key]: value }))} />
         </div>
       </div>
 

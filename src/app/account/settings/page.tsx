@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { AvatarUploader } from "@/components/avatar-uploader";
+import { DisplayNameForm } from "@/components/display-name-form";
 import { HandleForm } from "@/components/handle-form";
 import { cloudinaryImageUrl } from "@/server/media/cloudinary";
 import { getCurrentSession } from "@/server/auth/session";
@@ -24,6 +25,17 @@ export default async function AccountSettingsPage() {
       </p>
 
       <div className="mt-10 rounded-3xl border border-border bg-surface p-7 shadow-sm">
+        <h2 className="text-lg font-black text-fg">Display name</h2>
+        <p className="mt-1 text-sm text-muted-fg">
+          The name shown on your public profile and next to every listing you publish. We start it from your
+          sign-in email — change it to your name or your business name.
+        </p>
+        <div className="mt-4">
+          <DisplayNameForm initialName={session.user.displayName} />
+        </div>
+      </div>
+
+      <div className="mt-6 rounded-3xl border border-border bg-surface p-7 shadow-sm">
         <h2 className="text-lg font-black text-fg">Profile photo</h2>
         <div className="mt-4">
           <AvatarUploader initialImageUrl={avatarUrl} />

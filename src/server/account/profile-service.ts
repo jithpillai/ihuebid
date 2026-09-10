@@ -50,6 +50,24 @@ export async function setUserHandle(userId: string, rawHandle: string) {
   }
 }
 
+export const MAX_DISPLAY_NAME_LENGTH = 120;
+
+export function normalizeDisplayName(rawName: string): string {
+  return rawName.replace(/\s+/g, " ").trim().slice(0, MAX_DISPLAY_NAME_LENGTH);
+}
+
+export async function setUserDisplayName(userId: string, rawName: string) {
+  const displayName = normalizeDisplayName(rawName);
+  if (displayName.length < 2) {
+    throw new AuthError("INVALID_DISPLAY_NAME", "Your name must be at least 2 characters.", 400);
+  }
+  return db.user.update({
+    where: { id: userId },
+    data: { displayName },
+    select: { displayName: true },
+  });
+}
+
 export async function getPublicProfileByHandle(handle: string) {
   return db.userProfile.findUnique({
     where: { handle: normalizeHandle(handle) },

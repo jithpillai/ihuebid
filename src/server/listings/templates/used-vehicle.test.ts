@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { validateUsedVehicleFieldValues } from "./used-vehicle";
+import { suggestListingDescription, suggestListingTitle, validateUsedVehicleFieldValues } from "./used-vehicle";
 
 describe("validateUsedVehicleFieldValues", () => {
   it("requires the required fields", () => {
@@ -47,5 +47,43 @@ describe("validateUsedVehicleFieldValues", () => {
       transmission: "Automatic",
     });
     expect(errors).toContain("Fuel must be one of: Petrol, Diesel, CNG, Electric, Hybrid.");
+  });
+});
+
+describe("suggestListingTitle", () => {
+  it("builds a title as model year + make + model + variant + fuel + transmission", () => {
+    const title = suggestListingTitle({
+      make: "Toyota", model: "Fortuner", variant: "VXI", modelYear: "2021",
+      fuelType: "Diesel", transmission: "Automatic",
+    });
+    expect(title).toBe("2021 Toyota Fortuner VXI Diesel Automatic");
+  });
+
+  it("skips parts that aren't filled in", () => {
+    expect(suggestListingTitle({ make: "Honda", model: "City" })).toBe("Honda City");
+  });
+
+  it("is empty when nothing is filled in", () => {
+    expect(suggestListingTitle({})).toBe("");
+  });
+});
+
+describe("suggestListingDescription", () => {
+  it("composes a sentence from registration year, km, and owner count", () => {
+    expect(suggestListingDescription({ registrationYear: "2020", kmDriven: "42000", ownershipCount: "1" }))
+      .toBe("Registered in 2020, 42,000 km driven, single owner.");
+  });
+
+  it("pluralises owners and appends free-text notes as sentences", () => {
+    const desc = suggestListingDescription({
+      kmDriven: "80000", ownershipCount: "2",
+      serviceHistory: "full service history at authorised dealer",
+      knownDefects: "minor scratch on rear bumper",
+    });
+    expect(desc).toBe("80,000 km driven, 2 owners. Full service history at authorised dealer. Minor scratch on rear bumper.");
+  });
+
+  it("is empty when there is nothing to say", () => {
+    expect(suggestListingDescription({ make: "Toyota" })).toBe("");
   });
 });
