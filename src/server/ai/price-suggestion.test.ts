@@ -79,11 +79,12 @@ describe("buildPriceSuggestionPrompt", () => {
     expect(prompt).not.toContain("SOME-SENSITIVE-VIN");
   });
 
-  it("asks for a price range, a description, and standout points", () => {
+  it("asks for a price range, a fact-based description, and model-level strengths", () => {
     const { prompt } = buildPriceSuggestionPrompt({ currency: "INR", fieldValues: { make: "Honda", model: "City", modelYear: "2020" } });
     expect(prompt.toLowerCase()).toContain("price range");
     expect(prompt.toLowerCase()).toContain("description");
-    expect(prompt.toLowerCase()).toContain("standout points");
+    expect(prompt.toLowerCase()).toContain("strengths");
+    expect(prompt.toLowerCase()).toContain("do not restate the facts");
   });
 
   it("omits fields that weren't filled in", () => {
