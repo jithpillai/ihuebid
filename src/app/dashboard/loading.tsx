@@ -1,8 +1,9 @@
-import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingBanner, Skeleton } from "@/components/ui/skeleton";
 
 export default function Loading() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
+      <LoadingBanner />
       <Skeleton className="h-8 w-40" />
       <Skeleton className="mt-2 h-4 w-64" />
       <div className="mt-8 grid gap-3 sm:grid-cols-3">
