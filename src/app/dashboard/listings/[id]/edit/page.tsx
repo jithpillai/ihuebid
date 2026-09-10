@@ -10,6 +10,7 @@ import { ListingReferenceLinks } from "@/components/listing-reference-links";
 import { PendingLink } from "@/components/pending-link";
 import { PublishListingButton } from "@/components/publish-listing-button";
 import { ShareListingPanel } from "@/components/share-listing-panel";
+import { CollapsibleSection } from "@/components/ui/collapsible-section";
 import { StatusPill } from "@/components/ui/pill";
 import { AuthError } from "@/server/auth/auth-service";
 import { getCurrentSession } from "@/server/auth/session";
@@ -95,13 +96,14 @@ export default async function EditListingPage({ params }: Props) {
         </PendingLink>
       )}
 
-      <div className="mt-8">
-        <h2 className="text-sm font-black uppercase tracking-wide text-subtle-fg">Listing details</h2>
-        <p className="mt-1 text-sm text-muted-fg">Fix mistakes in the vehicle facts, title, description, or pricing.</p>
-        <div className="mt-4">
-          <ListingForm mode="edit" listingId={listing.id} hasResponses={hasResponses} initial={listingFormInitial} />
-        </div>
-      </div>
+      <CollapsibleSection
+        title="Listing details"
+        description="Fix mistakes in the vehicle facts, title, description, or pricing."
+        className="mt-8"
+        contentClassName="px-4 pb-4 sm:px-5 sm:pb-5"
+      >
+        <ListingForm mode="edit" listingId={listing.id} hasResponses={hasResponses} initial={listingFormInitial} />
+      </CollapsibleSection>
 
       {generatedShareMessage && (
         <div className="mt-8 rounded-3xl border border-border bg-surface p-7 shadow-sm">
@@ -210,13 +212,13 @@ export default async function EditListingPage({ params }: Props) {
       )}
 
       {canClose && (
-        <div className="mt-8 rounded-3xl border border-border bg-surface p-7 shadow-sm">
-          <h2 className="text-sm font-black uppercase tracking-wide text-subtle-fg">Close listing</h2>
-          <p className="mt-1 text-sm text-muted-fg">Opted-in participants are emailed the outcome. This can&rsquo;t be undone.</p>
-          <div className="mt-4">
-            <CloseListingForm listingId={listing.id} />
-          </div>
-        </div>
+        <CollapsibleSection
+          title="Close listing"
+          description="Opted-in participants are emailed the outcome. This can’t be undone."
+          className="mt-8"
+        >
+          <CloseListingForm listingId={listing.id} />
+        </CollapsibleSection>
       )}
 
       {listing.status === "CLOSED" && (
