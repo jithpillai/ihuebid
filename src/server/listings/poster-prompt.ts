@@ -175,5 +175,6 @@ export function buildPosterPrompt(args: {
     "- Use ONLY the facts above. Do not invent specifications, service records, ownership claims, prices, or words like “verified” unless they appear here.",
     "- If a line has no value, leave it out rather than guessing.",
     "- Keep the car's real colour and body shape; do not restyle or add badges.",
+    "- Privacy: if the number plate / vehicle registration number is visible in the photo, blur or black it out completely. Also remove any visible faces, phone numbers or house numbers.",
   ].join("\n");
 }

@@ -75,4 +75,10 @@ describe("buildPosterPrompt", () => {
     const prompt = buildPosterPrompt({ listing: baseListing, profile: baseProfile, hasLogo: true, photoCount: 2 });
     expect(prompt).toContain("Use ONLY the facts above");
   });
+
+  it("always instructs the AI to blur the registration number for privacy", () => {
+    const prompt = buildPosterPrompt({ listing: baseListing, profile: baseProfile, hasLogo: false, photoCount: 1 });
+    expect(prompt).toMatch(/blur or black it out/i);
+    expect(prompt).toContain("vehicle registration number");
+  });
 });
