@@ -6,6 +6,7 @@ import { ListingCard } from "@/components/listing-card";
 import { buttonClasses } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Stat, StatRow } from "@/components/ui/stat";
+import { listManagedAccounts } from "@/server/account/collaborator-service";
 import { getCurrentSession } from "@/server/auth/session";
 import { listListingsForCreatorWithStats } from "@/server/listings/listing-service";
 import { buildListingShareMessage } from "@/server/listings/share-message";
@@ -16,16 +17,98 @@ const PUBLISHED = new Set(["LIVE", "PAUSED", "CLOSED"]);
 
 export const metadata: Metadata = { title: "Dashboard", robots: { index: false, follow: false } };
 
+type ShareProfile = { brandName: string | null; location: string | null; contactPhone: string | null };
+type DashListing = Awaited<ReturnType<typeof listListingsForCreatorWithStats>>[number];
+
+function ListingGrid({ listings, handle, profile }: { listings: DashListing[]; handle: string | null; profile: ShareProfile }) {
+  return (
+    <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {listings.map((listing) => {
+        const cover = listing.mediaAssets[0];
+        const shareable = handle && PUBLISHED.has(listing.status);
+        const shareUrl = shareable ? `${appUrl()}/${handle}/${listing.publicId}` : undefined;
+        const copyText = shareUrl
+          ? (listing.shareMessage ?? buildListingShareMessage({
+              listing: {
+                title: listing.title,
+                fieldValues: Object.fromEntries(listing.fieldValues.map((f) => [f.fieldKey, f.fieldValue])),
+                ownerExpectedPrice: listing.ownerExpectedPrice != null ? Number(listing.ownerExpectedPrice) : null,
+                currency: listing.currency,
+                locationText: listing.locationText,
+                description: listing.description,
+              },
+              profile,
+              url: shareUrl,
+            }))
+          : undefined;
+        return (
+          <ListingCard
+            key={listing.id}
+            href={`/dashboard/listings/${listing.id}/edit`}
+            title={listing.title}
+            coverUrl={cover ? cloudinaryImageUrl({ publicId: cover.publicId }) : null}
+            status={listing.status}
+            shareUrl={shareUrl}
+            shareTitle={listing.title}
+            copyText={copyText}
+            responseCount={listing.responseCount}
+            meta={new Date(listing.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+async function ManagedAccountSection({
+  account,
+}: {
+  account: Awaited<ReturnType<typeof listManagedAccounts>>[number];
+}) {
+  const listings = await listListingsForCreatorWithStats(account.id);
+  return (
+    <div className="mt-10">
+      <div className="flex flex-wrap items-baseline gap-x-2">
+        <h2 className="text-sm font-black uppercase tracking-wide text-subtle-fg">
+          Managing · {account.brandName || account.displayName}
+        </h2>
+        {account.handle && (
+          <Link href={`/${account.handle}`} className="text-xs font-semibold text-accent-soft-fg hover:underline">
+            bid.ihue.in/{account.handle}
+          </Link>
+        )}
+      </div>
+      {listings.length === 0 ? (
+        <p className="mt-3 text-sm text-subtle-fg">No listings yet.</p>
+      ) : (
+        <ListingGrid
+          listings={listings}
+          handle={account.handle}
+          profile={{ brandName: account.brandName, location: account.location, contactPhone: account.contactPhone }}
+        />
+      )}
+    </div>
+  );
+}
+
 export default async function DashboardPage() {
   const session = await getCurrentSession();
   if (!session) redirect("/login?returnTo=/dashboard");
 
-  const listings = await listListingsForCreatorWithStats(session.userId);
+  const [ownListings, managed] = await Promise.all([
+    listListingsForCreatorWithStats(session.userId),
+    listManagedAccounts(session),
+  ]);
   const handle = session.user.profile?.handle;
+  const ownProfile: ShareProfile = {
+    brandName: session.user.profile?.brandName ?? null,
+    location: session.user.profile?.location ?? null,
+    contactPhone: session.user.profile?.contactPhone ?? null,
+  };
 
-  const liveCount = listings.filter((listing) => listing.status === "LIVE").length;
-  const totalResponses = listings.reduce((sum, listing) => sum + listing.responseCount, 0);
-  const needsOnboarding = !handle || listings.length === 0;
+  const liveCount = ownListings.filter((listing) => listing.status === "LIVE").length;
+  const totalResponses = ownListings.reduce((sum, listing) => sum + listing.responseCount, 0);
+  const needsOnboarding = (!handle || ownListings.length === 0) && managed.length === 0;
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
@@ -45,9 +128,9 @@ export default async function DashboardPage() {
         </Link>
       </div>
 
-      {!needsOnboarding && (
+      {!needsOnboarding && ownListings.length > 0 && (
         <StatRow className="mt-8 max-w-md">
-          <Stat label="Listings" value={listings.length} />
+          <Stat label="Listings" value={ownListings.length} />
           <Stat label="Live" value={liveCount} />
           <Stat label="Responses" value={totalResponses} />
         </StatRow>
@@ -98,45 +181,22 @@ export default async function DashboardPage() {
           </div>
         </Card>
       ) : (
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {listings.map((listing) => {
-            const cover = listing.mediaAssets[0];
-            const shareable = handle && PUBLISHED.has(listing.status);
-            const shareUrl = shareable ? `${appUrl()}/${handle}/${listing.publicId}` : undefined;
-            const copyText = shareUrl
-              ? (listing.shareMessage ?? buildListingShareMessage({
-                  listing: {
-                    title: listing.title,
-                    fieldValues: Object.fromEntries(listing.fieldValues.map((f) => [f.fieldKey, f.fieldValue])),
-                    ownerExpectedPrice: listing.ownerExpectedPrice != null ? Number(listing.ownerExpectedPrice) : null,
-                    currency: listing.currency,
-                    locationText: listing.locationText,
-                    description: listing.description,
-                  },
-                  profile: {
-                    brandName: session.user.profile?.brandName ?? null,
-                    location: session.user.profile?.location ?? null,
-                    contactPhone: session.user.profile?.contactPhone ?? null,
-                  },
-                  url: shareUrl,
-                }))
-              : undefined;
-            return (
-              <ListingCard
-                key={listing.id}
-                href={`/dashboard/listings/${listing.id}/edit`}
-                title={listing.title}
-                coverUrl={cover ? cloudinaryImageUrl({ publicId: cover.publicId }) : null}
-                status={listing.status}
-                shareUrl={shareUrl}
-                shareTitle={listing.title}
-                copyText={copyText}
-                responseCount={listing.responseCount}
-                meta={new Date(listing.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
-              />
-            );
-          })}
-        </div>
+        <>
+          {ownListings.length > 0 ? (
+            <>
+              {managed.length > 0 && (
+                <h2 className="mt-10 text-sm font-black uppercase tracking-wide text-subtle-fg">Your listings</h2>
+              )}
+              <ListingGrid listings={ownListings} handle={handle ?? null} profile={ownProfile} />
+            </>
+          ) : (
+            <p className="mt-8 text-sm text-subtle-fg">You don&rsquo;t have any listings of your own yet.</p>
+          )}
+
+          {managed.map((account) => (
+            <ManagedAccountSection key={account.id} account={account} />
+          ))}
+        </>
       )}
     </section>
   );

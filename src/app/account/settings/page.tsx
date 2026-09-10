@@ -3,10 +3,12 @@ import { redirect } from "next/navigation";
 
 import { AvatarUploader } from "@/components/avatar-uploader";
 import { BannerUploader } from "@/components/banner-uploader";
+import { CollaboratorsCard } from "@/components/collaborators-card";
 import { DisplayNameForm } from "@/components/display-name-form";
 import { EventNotificationEmailsForm } from "@/components/event-notification-emails-form";
 import { HandleForm } from "@/components/handle-form";
 import { ProfileDetailsForm } from "@/components/profile-details-form";
+import { listAccountCollaborators } from "@/server/account/collaborator-service";
 import { normalizeEventNotificationEmails, normalizeProfileLinks } from "@/server/account/profile-service";
 import { cloudinaryImageUrl } from "@/server/media/cloudinary";
 import { getCurrentSession } from "@/server/auth/session";
@@ -16,6 +18,8 @@ export const metadata: Metadata = { title: "Account settings", robots: { index: 
 export default async function AccountSettingsPage() {
   const session = await getCurrentSession();
   if (!session) redirect("/login?returnTo=/account/settings");
+
+  const collaborators = await listAccountCollaborators(session.userId);
 
   const avatarUrl = session.user.profile?.avatarPublicId
     ? cloudinaryImageUrl({ publicId: session.user.profile.avatarPublicId, deliveryType: "authenticated" })
@@ -83,6 +87,16 @@ export default async function AccountSettingsPage() {
           <EventNotificationEmailsForm
             initialEmails={normalizeEventNotificationEmails(session.user.profile?.eventNotificationEmails)}
           />
+        </div>
+      </div>
+
+      <div className="mt-6 rounded-3xl border border-border bg-surface p-7 shadow-sm">
+        <h2 className="text-lg font-black text-fg">Collaborators</h2>
+        <p className="mt-1 text-sm text-muted-fg">
+          Give one or two people access to co-manage your listings and interested buyers under your handle.
+        </p>
+        <div className="mt-4">
+          <CollaboratorsCard initialCollaborators={collaborators} />
         </div>
       </div>
 

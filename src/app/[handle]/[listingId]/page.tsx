@@ -88,7 +88,7 @@ export default async function PublicListingPage({ params }: Props) {
     || (listing.ownerPriceVisibility === "HIDDEN_UNTIL_RESPONSE" && existingValuation !== null);
 
   const session = await getCurrentSession();
-  const canEdit = session ? canEditListing(listing, session) : false;
+  const canEdit = session ? await canEditListing(listing, session) : false;
 
   const heroImage = listing.mediaAssets[0];
   const restImages = listing.mediaAssets.slice(1);

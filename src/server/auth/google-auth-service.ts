@@ -85,5 +85,20 @@ export async function completeGoogleSignIn(code: string, flow: GoogleOAuthFlow) 
     return user;
   });
 
+  await claimCollaboratorInvites(user.id, email, now);
+
   return { user, token, expiresAt };
+}
+
+// Link any pending collaborator invites addressed to this email now that the
+// person has an account. Non-fatal — a failure here must not break sign-in.
+async function claimCollaboratorInvites(userId: string, email: string, now: Date) {
+  try {
+    await db.accountCollaborator.updateMany({
+      where: { email, memberId: null },
+      data: { memberId: userId, linkedAt: now },
+    });
+  } catch (error) {
+    console.error("Collaborator invite claim failed", error instanceof Error ? error.message : error);
+  }
 }

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { db } from "@/lib/db";
+import { isAccountManager } from "@/server/account/collaborator-service";
 import { AuthError } from "@/server/auth/auth-service";
 import { toYouTubeEmbedUrl } from "@/server/listings/embed-validation";
 import { generateListingPublicId } from "@/server/listings/public-id";
@@ -8,12 +9,14 @@ import { validateUsedVehicleFieldValues } from "@/server/listings/templates/used
 
 type SessionShape = { userId: string; user: { role: string } };
 
-export function canEditListing(
+// Owner, platform admin, or a linked account collaborator (account-wide access).
+export async function canEditListing(
   listing: { creatorId: string },
   session: SessionShape,
-): boolean {
+): Promise<boolean> {
   if (session.user.role === "ADMIN") return true;
-  return listing.creatorId === session.userId;
+  if (listing.creatorId === session.userId) return true;
+  return isAccountManager(listing.creatorId, session);
 }
 
 export type CreateListingInput = {
@@ -52,7 +55,9 @@ async function createUniquePublicId(): Promise<string> {
   throw new Error("Could not generate a unique listing id.");
 }
 
-export async function createListing(session: SessionShape, input: CreateListingInput) {
+// `accountUserId` is the account the listing belongs to — the caller must have
+// already authorised `session` for it (own account or a collaboration).
+export async function createListing(session: SessionShape, accountUserId: string, input: CreateListingInput) {
   const errors = [
     ...validateCommonFields(input),
     ...validateUsedVehicleFieldValues(input.fieldValues),
@@ -64,7 +69,7 @@ export async function createListing(session: SessionShape, input: CreateListingI
   return db.listing.create({
     data: {
       publicId,
-      creatorId: session.userId,
+      creatorId: accountUserId,
       title: input.title.trim(),
       category: input.category,
       description: input.description?.trim() || null,
@@ -104,10 +109,18 @@ export async function getListingByPublicId(publicId: string) {
 export async function getListingForOwner(listingId: string, session: SessionShape) {
   const listing = await db.listing.findUnique({
     where: { id: listingId },
-    include: { fieldValues: true, mediaAssets: { orderBy: { sortOrder: "asc" } }, embeds: true, referenceLinks: true },
+    include: {
+      fieldValues: true,
+      mediaAssets: { orderBy: { sortOrder: "asc" } },
+      embeds: true,
+      referenceLinks: true,
+      creator: { include: { profile: true } },
+    },
   });
   if (!listing) throw new AuthError("LISTING_NOT_FOUND", "This listing could not be found.", 404);
-  if (!canEditListing(listing, session)) throw new AuthError("FORBIDDEN", "You don't have permission to edit this listing.", 403);
+  if (!(await canEditListing(listing, session))) {
+    throw new AuthError("FORBIDDEN", "You don't have permission to edit this listing.", 403);
+  }
   return listing;
 }
 

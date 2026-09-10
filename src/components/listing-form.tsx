@@ -25,8 +25,10 @@ export type ListingFormInitial = {
   fieldValues: Record<string, string>;
 };
 
+export type ListingFormAccount = { id: string; label: string };
+
 type Props =
-  | { mode: "create" }
+  | { mode: "create"; accounts: ListingFormAccount[] }
   | { mode: "edit"; listingId: string; hasResponses: boolean; initial: ListingFormInitial };
 
 const CREATE_DEFAULTS: ListingFormInitial = {
@@ -47,7 +49,9 @@ export function ListingForm(props: Props) {
   const initial = props.mode === "edit" ? props.initial : CREATE_DEFAULTS;
   const isEdit = props.mode === "edit";
 
+  const accounts = props.mode === "create" ? props.accounts : [];
   const router = useRouter();
+  const [accountId, setAccountId] = useState(accounts[0]?.id ?? "");
   const [title, setTitle] = useState(initial.title);
   const [description, setDescription] = useState(initial.description);
   const [locationText, setLocationText] = useState(initial.locationText);
@@ -147,7 +151,11 @@ export function ListingForm(props: Props) {
         const response = await fetch("/api/listings", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ ...payload, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }),
+          body: JSON.stringify({
+            ...payload,
+            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            accountId: accountId || undefined,
+          }),
         });
         const result = await response.json() as { ok: boolean; message?: string; listing?: { id: string } };
         if (!response.ok || !result.ok || !result.listing) throw new Error(result.message ?? "Unable to create this listing.");
@@ -170,6 +178,21 @@ export function ListingForm(props: Props) {
           This listing already has responses. The market signal was calculated from what those participants saw —
           changing the vehicle details, price, or response range now can make it misleading. Fix genuine mistakes only.
         </p>
+      )}
+
+      {!isEdit && accounts.length > 1 && (
+        <label className="block text-sm font-semibold text-body">
+          Publish under
+          <select
+            value={accountId}
+            onChange={(event) => setAccountId(event.target.value)}
+            className="mt-2 w-full rounded-2xl border border-border-strong bg-surface px-4 py-3 text-fg outline-none focus:border-accent"
+          >
+            {accounts.map((account) => (
+              <option key={account.id} value={account.id}>{account.label}</option>
+            ))}
+          </select>
+        </label>
       )}
 
       <div>

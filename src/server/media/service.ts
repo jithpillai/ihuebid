@@ -25,7 +25,7 @@ async function resolveMediaContext(session: NonNullable<SessionShape>, purpose: 
   if (!listingId) throw new AuthError("LISTING_REQUIRED", "Select the listing this image belongs to.");
   const listing = await db.listing.findUnique({ where: { id: listingId }, select: { id: true, creatorId: true } });
   if (!listing) throw new AuthError("LISTING_NOT_FOUND", "This listing could not be found.", 404);
-  if (!canEditListing(listing, session)) throw new AuthError("FORBIDDEN", "You don't have permission to edit this listing's photos.", 403);
+  if (!(await canEditListing(listing, session))) throw new AuthError("FORBIDDEN", "You don't have permission to edit this listing's photos.", 403);
   return { listingId: listing.id, publicIdPrefix: `${folderPrefix}/listings/${listing.id}/image`, deliveryType: "upload" as const };
 }
 

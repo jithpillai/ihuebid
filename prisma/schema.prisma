@@ -106,6 +106,10 @@ model User {
   sessions           Session[]
   externalIdentities ExternalIdentity[]
   listings           Listing[]
+  // People this user invited to co-manage their account.
+  collaboratorsInvited AccountCollaborator[] @relation("CollaboratorOwner")
+  // Accounts this user was invited to co-manage.
+  collaboratingOn      AccountCollaborator[] @relation("CollaboratorMember")
 
   @@map("users")
 }
@@ -136,6 +140,30 @@ model UserProfile {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_profiles")
+}
+
+// A person the account owner invited (by email) to co-manage everything under
+// their handle: create / edit / publish / close listings, manage media, and
+// see & contact interested buyers. Deliberately account-wide, not per-listing.
+// `memberId` is null until a User with that email exists (linked at invite
+// time if they already have an account, otherwise on their next sign-in —
+// see claimCollaboratorInvites). Revoking deletes the row (no audit trail
+// needed at this scale); the unique key lets a revoked invite be re-added.
+model AccountCollaborator {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ownerId   String    @map("owner_id") @db.Uuid
+  email     String    @db.VarChar(320)
+  memberId  String?   @map("member_id") @db.Uuid
+  linkedAt  DateTime? @map("linked_at") @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  owner  User  @relation("CollaboratorOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  member User? @relation("CollaboratorMember", fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([ownerId, email])
+  @@index([memberId])
+  @@map("account_collaborators")
 }
 
 model ExternalIdentity {

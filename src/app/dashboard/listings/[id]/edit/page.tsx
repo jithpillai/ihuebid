@@ -37,7 +37,8 @@ export default async function EditListingPage({ params }: Props) {
     throw error;
   }
 
-  const handle = session.user.profile?.handle;
+  // The listing's own account — not necessarily the signed-in user (collaborators).
+  const handle = listing.creator.profile?.handle;
   const galleryAssets = listing.mediaAssets.map((asset) => ({ id: asset.id, url: cloudinaryImageUrl({ publicId: asset.publicId }) }));
   const canPublish = (listing.status === "DRAFT" || listing.status === "SCHEDULED") && handle;
   const canClose = listing.status === "LIVE" || listing.status === "PAUSED";
@@ -60,7 +61,7 @@ export default async function EditListingPage({ params }: Props) {
     responseIncrement: String(Number(listing.responseIncrement)),
     fieldValues: Object.fromEntries(listing.fieldValues.map((field) => [field.fieldKey, field.fieldValue])),
   };
-  const profile = session.user.profile;
+  const profile = listing.creator.profile;
   const generatedShareMessage = isPublished && handle
     ? buildListingShareMessage({
         listing: {

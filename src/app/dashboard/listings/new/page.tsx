@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { ListingForm } from "@/components/listing-form";
+import { listCreatableAccounts } from "@/server/account/collaborator-service";
 import { getCurrentSession } from "@/server/auth/session";
 
 export const metadata: Metadata = { title: "New listing", robots: { index: false, follow: false } };
@@ -10,7 +11,9 @@ export const metadata: Metadata = { title: "New listing", robots: { index: false
 export default async function NewListingPage() {
   const session = await getCurrentSession();
   if (!session) redirect("/login?returnTo=/dashboard/listings/new");
-  if (!session.user.profile?.handle) redirect("/account/settings");
+
+  const accounts = await listCreatableAccounts(session);
+  if (accounts.length === 0) redirect("/account/settings");
 
   return (
     <section className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
@@ -22,7 +25,7 @@ export default async function NewListingPage() {
         This is saved as a draft — you&rsquo;ll add photos and publish on the next screen.
       </p>
       <div className="mt-8">
-        <ListingForm mode="create" />
+        <ListingForm mode="create" accounts={accounts} />
       </div>
     </section>
   );

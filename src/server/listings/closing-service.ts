@@ -8,9 +8,7 @@ import { renderClosureNotificationEmail } from "@/server/email/closure-notificat
 import { getEmailProvider } from "@/server/email/provider";
 import { getListingForOwner } from "@/server/listings/listing-service";
 
-type SessionShape = Parameters<typeof getListingForOwner>[1] & {
-  user: { displayName: string; profile: { handle: string | null } | null };
-};
+type SessionShape = Parameters<typeof getListingForOwner>[1];
 
 export type CloseListingInput = {
   outcome: ClosureOutcome;
@@ -41,18 +39,26 @@ export async function closeListing(session: SessionShape, listingId: string, inp
     },
   });
 
-  await notifyOptedInParticipants(session, listing.id, listing.publicId, listing.title, listing.currency, input);
+  // Notifications are addressed from the listing's account, not whoever closed it.
+  await notifyOptedInParticipants(
+    { handle: listing.creator.profile?.handle ?? null, displayName: listing.creator.displayName },
+    listing.id,
+    listing.publicId,
+    listing.title,
+    listing.currency,
+    input,
+  );
 }
 
 async function notifyOptedInParticipants(
-  session: SessionShape,
+  creator: { handle: string | null; displayName: string },
   listingId: string,
   listingPublicId: string,
   listingTitle: string,
   currency: string,
   input: CloseListingInput,
 ) {
-  const handle = session.user.profile?.handle;
+  const handle = creator.handle;
   if (!handle) return; // every LIVE listing's creator has a handle by construction; defensive no-op otherwise
 
   const optIns = await db.notificationOptIn.findMany({
@@ -77,7 +83,7 @@ async function notifyOptedInParticipants(
         to: optIn.email,
         ...renderClosureNotificationEmail({
           listingTitle,
-          creatorDisplayName: session.user.displayName,
+          creatorDisplayName: creator.displayName,
           outcome: input.outcome,
           finalPriceFormatted: currencyFormatter && input.finalPrice != null ? currencyFormatter.format(input.finalPrice) : undefined,
           interestedUrl,

@@ -135,5 +135,15 @@ export async function verifyEmailOtp(emailValue: string, code: string) {
     return account;
   });
 
+  // Link any pending collaborator invites addressed to this email. Non-fatal.
+  try {
+    await db.accountCollaborator.updateMany({
+      where: { email, memberId: null },
+      data: { memberId: user.id, linkedAt: now },
+    });
+  } catch (error) {
+    console.error("Collaborator invite claim failed", error instanceof Error ? error.message : error);
+  }
+
   return { user, token, expiresAt };
 }
