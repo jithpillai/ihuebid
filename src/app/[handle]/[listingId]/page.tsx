@@ -8,7 +8,8 @@ import { PendingLink } from "@/components/pending-link";
 import { ShareButton } from "@/components/share-button";
 import { ValuationForm } from "@/components/valuation-form";
 import { StatusPill } from "@/components/ui/pill";
-import { getListingByPublicId } from "@/server/listings/listing-service";
+import { getCurrentSession } from "@/server/auth/session";
+import { canEditListing, getListingByPublicId } from "@/server/listings/listing-service";
 import { getListingAggregate, getParticipantValuation } from "@/server/listings/response-service";
 import { buildListingShareMessage } from "@/server/listings/share-message";
 import { usedVehicleFieldByKey } from "@/server/listings/templates/used-vehicle";
@@ -83,6 +84,9 @@ export default async function PublicListingPage({ params }: Props) {
   const showOwnerPrice = listing.ownerPriceVisibility === "VISIBLE"
     || (listing.ownerPriceVisibility === "HIDDEN_UNTIL_RESPONSE" && existingValuation !== null);
 
+  const session = await getCurrentSession();
+  const canEdit = session ? canEditListing(listing, session) : false;
+
   const heroImage = listing.mediaAssets[0];
   const restImages = listing.mediaAssets.slice(1);
 
@@ -113,7 +117,17 @@ export default async function PublicListingPage({ params }: Props) {
       <div className="mt-3 flex flex-wrap items-center gap-3">
         <h1 className="text-3xl font-black tracking-tight text-fg sm:text-4xl">{listing.title}</h1>
         <StatusPill status={listing.status} />
-        <ShareButton variant="button" className="ml-auto" url={shareUrl} title={listing.title} text={shareText} />
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          {canEdit && (
+            <PendingLink
+              href={`/dashboard/listings/${listing.id}/edit`}
+              className="inline-flex items-center gap-2 rounded-2xl border border-border-strong bg-surface px-4 py-2.5 text-sm font-bold text-body transition hover:border-accent hover:text-fg"
+            >
+              Edit listing
+            </PendingLink>
+          )}
+          <ShareButton variant="button" url={shareUrl} title={listing.title} text={shareText} />
+        </div>
       </div>
       {listing.locationText && <p className="mt-1 text-sm font-semibold text-subtle-fg">{listing.locationText}</p>}
 

@@ -3,10 +3,12 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 
 import { ListingCard } from "@/components/listing-card";
+import { PendingLink } from "@/components/pending-link";
 import { ShareButton } from "@/components/share-button";
 import { EmptyState, icons } from "@/components/ui/empty-state";
 import { Pill } from "@/components/ui/pill";
 import { Stat, StatRow } from "@/components/ui/stat";
+import { getCurrentSession } from "@/server/auth/session";
 import { getPublicProfileByHandle, normalizeProfileLinks, toWhatsAppDigits } from "@/server/account/profile-service";
 import { listPublicListingsForHandleWithStats } from "@/server/listings/listing-service";
 import { cloudinaryBannerUrl, cloudinaryImageUrl, cloudinaryOgImageUrl } from "@/server/media/cloudinary";
@@ -50,6 +52,9 @@ export default async function CreatorProfilePage({ params }: Props) {
   const { handle } = await params;
   const profile = await getPublicProfileByHandle(handle);
   if (!profile) notFound();
+
+  const session = await getCurrentSession();
+  const isOwner = session?.userId === profile.userId;
 
   const listings = await listPublicListingsForHandleWithStats(profile.userId);
   const avatarUrl = profile.avatarPublicId
@@ -108,12 +113,21 @@ export default async function CreatorProfilePage({ params }: Props) {
           {profile.brandName && <p className="mt-1 text-sm font-bold text-muted-fg">{profile.brandName}</p>}
           <p className="mt-1 text-sm font-semibold text-subtle-fg">bid.ihue.in/{profile.handle}</p>
         </div>
-        <ShareButton
-          variant="button"
-          className="sm:ml-auto"
-          url={`${appUrl()}/${profile.handle}`}
-          title={`${profile.user.displayName} on ihue Bid`}
-        />
+        <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
+          {isOwner && (
+            <PendingLink
+              href="/dashboard"
+              className="inline-flex items-center gap-2 rounded-2xl border border-border-strong bg-surface px-4 py-2.5 text-sm font-bold text-body transition hover:border-accent hover:text-fg"
+            >
+              Your listings
+            </PendingLink>
+          )}
+          <ShareButton
+            variant="button"
+            url={`${appUrl()}/${profile.handle}`}
+            title={`${profile.user.displayName} on ihue Bid`}
+          />
+        </div>
       </div>
 
       {profile.bio && <p className="mt-5 max-w-2xl text-base leading-7 text-body">{profile.bio}</p>}
