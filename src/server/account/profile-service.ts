@@ -3,6 +3,7 @@ import "server-only";
 import { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { AuthError } from "@/server/auth/auth-service";
+import { isEmail, normalizeEmail } from "@/server/auth/crypto";
 import { isReservedHandle } from "@/server/account/reserved-handles";
 
 const HANDLE_PATTERN = /^[a-z0-9_-]+$/;
@@ -92,6 +93,37 @@ export function normalizeContactPhone(raw: unknown): string | null {
 export function toWhatsAppDigits(phone: string): string {
   const digits = phone.replace(/\D/g, "");
   return digits.length === 10 ? `91${digits}` : digits;
+}
+
+// Account-wide "event notification" recipients — alerted when a participant
+// marks "Interested to Buy" on any of the creator's listings. Same
+// JSON-blob-plus-pure-normalizer shape as `links`.
+export const MAX_EVENT_NOTIFICATION_EMAILS = 10;
+
+export function normalizeEventNotificationEmails(raw: unknown): string[] {
+  const source = Array.isArray(raw) ? raw : [];
+  const seen = new Set<string>();
+  const emails: string[] = [];
+  for (const entry of source) {
+    if (typeof entry !== "string") continue;
+    const email = normalizeEmail(entry);
+    if (!isEmail(email) || seen.has(email)) continue;
+    seen.add(email);
+    emails.push(email);
+    if (emails.length >= MAX_EVENT_NOTIFICATION_EMAILS) break;
+  }
+  return emails;
+}
+
+export async function setEventNotificationEmails(userId: string, raw: unknown) {
+  const emails = normalizeEventNotificationEmails(raw);
+  const profile = await db.userProfile.upsert({
+    where: { userId },
+    create: { userId, eventNotificationEmails: emails },
+    update: { eventNotificationEmails: emails },
+    select: { eventNotificationEmails: true },
+  });
+  return { emails: normalizeEventNotificationEmails(profile.eventNotificationEmails) };
 }
 
 export type ProfileDetailsInput = {

@@ -28,6 +28,7 @@ enum ExternalIdentityProvider {
 enum OtpPurpose {
   SIGN_IN
   CONTACT_VERIFY
+  BUYER_INTEREST_VERIFY
 }
 
 enum VerificationStatus {
@@ -81,6 +82,8 @@ enum RateLimitAction {
   EMAIL_OTP_REQUEST
   EMAIL_OTP_VERIFY
   AI_PRICE_SUGGESTION
+  BUYER_INTEREST_REQUEST
+  BUYER_INTEREST_VERIFY
 }
 
 enum EmbedProvider {
@@ -120,6 +123,10 @@ model UserProfile {
   // Typed shape: { website?, instagram?, facebook?, youtube? } — see
   // normalizeProfileLinks in profile-service.ts.
   links              Json?
+  // Account-wide list of emails alerted whenever a participant marks
+  // "Interested to Buy" on any of this creator's listings. Normalized
+  // string[] — see normalizeEventNotificationEmails in profile-service.ts.
+  eventNotificationEmails Json? @map("event_notification_emails")
   verificationStatus VerificationStatus  @default(NONE) @map("verification_status")
   avatarPublicId     String?             @map("avatar_public_id") @db.VarChar(400)
   bannerPublicId     String?             @map("banner_public_id") @db.VarChar(400)
@@ -351,6 +358,13 @@ model NotificationOptIn {
   participantIdentityId  String    @map("participant_identity_id") @db.Uuid
   email                  String    @db.VarChar(320)
   verifiedAt             DateTime? @map("verified_at") @db.Timestamptz(3)
+  // Set once, never cleared, when the participant completes the
+  // "I am interested to Buy" flow (name + phone + verified email + an
+  // estimate). Non-null ⇒ the dashboard shows this row as "Ready to Buy"
+  // and the public page permanently shows the shared-with-the-team notice.
+  buyerName             String?   @map("buyer_name") @db.VarChar(120)
+  buyerPhone            String?   @map("buyer_phone") @db.VarChar(32)
+  readyToBuyAt          DateTime? @map("ready_to_buy_at") @db.Timestamptz(3)
   // Powers the "I'm still interested" magic link — same hash-the-random-token
   // design as Session/ParticipantIdentity, the raw token only ever lives in
   // the outbound email, never stored. Null until the closure notification is

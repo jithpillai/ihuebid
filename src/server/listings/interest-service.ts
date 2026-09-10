@@ -19,10 +19,19 @@ export async function getListingParticipantContacts(listingId: string) {
   return db.notificationOptIn.findMany({
     where: { listingId, verifiedAt: { not: null } },
     orderBy: [
+      { readyToBuyAt: { sort: "desc", nulls: "last" } },
       { stillInterestedAt: { sort: "desc", nulls: "last" } },
       { createdAt: "desc" },
     ],
-    select: { id: true, email: true, createdAt: true, stillInterestedAt: true },
+    select: {
+      id: true,
+      email: true,
+      createdAt: true,
+      stillInterestedAt: true,
+      buyerName: true,
+      buyerPhone: true,
+      readyToBuyAt: true,
+    },
   });
 }
 

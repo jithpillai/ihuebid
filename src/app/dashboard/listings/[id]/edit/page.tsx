@@ -135,7 +135,8 @@ export default async function EditListingPage({ params }: Props) {
         <div className="mt-6 rounded-3xl border border-border bg-surface p-7 shadow-sm">
           <h2 className="text-sm font-black uppercase tracking-wide text-subtle-fg">Interested participants</h2>
           <p className="mt-1 text-sm text-muted-fg">
-            Everyone who left a verified email to hear about this listing. They agreed to share it with you so you can reach out.
+            Everyone who left a verified email about this listing. <span className="font-semibold text-emerald-700 dark:text-emerald-300">Ready to Buy</span> means
+            they submitted their name, phone, and estimate through &ldquo;I am interested to Buy&rdquo;.
           </p>
           {contacts.length === 0 ? (
             <p className="mt-4 text-sm text-subtle-fg">No one has left their email yet.</p>
@@ -143,14 +144,24 @@ export default async function EditListingPage({ params }: Props) {
             <ul className="mt-4 divide-y divide-border overflow-hidden rounded-2xl border border-border">
               {contacts.map((contact) => (
                 <li key={contact.id} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 bg-surface px-4 py-3">
-                  <a
-                    href={`mailto:${contact.email}`}
-                    className="text-sm font-semibold text-accent-soft-fg hover:underline"
-                  >
-                    {contact.email}
-                  </a>
+                  <span className="min-w-0">
+                    {contact.buyerName && <span className="mr-2 text-sm font-bold text-fg">{contact.buyerName}</span>}
+                    <a href={`mailto:${contact.email}`} className="text-sm font-semibold text-accent-soft-fg hover:underline">
+                      {contact.email}
+                    </a>
+                    {contact.buyerPhone && (
+                      <a href={`tel:${contact.buyerPhone}`} className="ml-2 text-sm font-semibold text-accent-soft-fg hover:underline">
+                        {contact.buyerPhone}
+                      </a>
+                    )}
+                  </span>
                   <span className="flex items-center gap-2">
-                    {contact.stillInterestedAt ? (
+                    {contact.readyToBuyAt ? (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-emerald-700 ring-1 ring-inset ring-emerald-500/30 dark:text-emerald-300">
+                        <span className="size-1.5 rounded-full bg-current" />
+                        Ready to Buy
+                      </span>
+                    ) : contact.stillInterestedAt ? (
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/12 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-emerald-700 ring-1 ring-inset ring-emerald-500/25 dark:text-emerald-300">
                         <span className="size-1.5 rounded-full bg-current" />
                         Still interested

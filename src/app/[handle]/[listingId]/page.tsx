@@ -3,6 +3,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 
 import { AggregateResultPanel } from "@/components/aggregate-result-panel";
+import { BuyerInterestForm } from "@/components/buyer-interest-form";
 import { NotifyOptInForm } from "@/components/notify-optin-form";
 import { PendingLink } from "@/components/pending-link";
 import { ShareButton } from "@/components/share-button";
@@ -17,6 +18,7 @@ import { cloudinaryImageUrl, cloudinaryOgImageUrl } from "@/server/media/cloudin
 
 const appUrl = () => (process.env.APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
 import { getParticipantIdentity } from "@/server/participant/identity-service";
+import { getBuyerInterest } from "@/server/participant/buyer-interest-service";
 import { getNotificationOptIn } from "@/server/participant/notification-service";
 
 const CLOSURE_OUTCOME_LABEL: Record<string, string> = {
@@ -77,6 +79,9 @@ export default async function PublicListingPage({ params }: Props) {
   const participantIdentityId = participantIdentity?.id ?? null;
   const existingValuation = await getParticipantValuation(listing.id, participantIdentityId);
   const notificationOptIn = await getNotificationOptIn(listing.id, participantIdentityId);
+  const buyerInterest = await getBuyerInterest(listing.id, participantIdentityId);
+  const isReadyToBuy = buyerInterest?.readyToBuyAt != null;
+  const brandLabel = listing.creator.profile?.brandName ?? listing.creator.displayName;
   const aggregate = listing.resultVisibility === "PUBLIC" ? await getListingAggregate(listing.id) : null;
   // HIDDEN_UNTIL_RESPONSE: reveal the owner's expectation only once this
   // visitor has given their own opinion first — never before, so an early
@@ -231,6 +236,11 @@ export default async function PublicListingPage({ params }: Props) {
               ) : (
                 <p className="mt-2 text-sm text-muted-fg">This listing is no longer accepting responses.</p>
               )}
+              {isReadyToBuy && (
+                <p className="mt-4 rounded-2xl border border-accent-soft-fg/30 bg-accent-soft px-4 py-3 text-sm font-semibold text-accent-soft-fg">
+                  Your interest to buy and contact details have been shared with {brandLabel} &amp; team.
+                </p>
+              )}
             </div>
           ) : (
             <div className="rounded-3xl border border-border bg-surface p-6">
@@ -249,6 +259,22 @@ export default async function PublicListingPage({ params }: Props) {
                   {currencyFormatter.format(Number(listing.responseMin))} – {currencyFormatter.format(Number(listing.responseMax))}
                 </span>
               </p>
+              {(listing.status === "LIVE" || isReadyToBuy) && (
+                <div className="mt-6">
+                  <BuyerInterestForm
+                    listingId={listing.id}
+                    status={listing.status}
+                    currency={listing.currency}
+                    min={Number(listing.responseMin)}
+                    max={Number(listing.responseMax)}
+                    increment={Number(listing.responseIncrement)}
+                    initialValue={existingValuation?.value ?? null}
+                    initialName={existingValuation?.contributorName ?? participantIdentity?.displayName ?? null}
+                    brandLabel={brandLabel}
+                    initiallyReadyToBuy={isReadyToBuy}
+                  />
+                </div>
+              )}
               <div className="mt-6">
                 <ValuationForm
                   listingId={listing.id}
@@ -262,7 +288,7 @@ export default async function PublicListingPage({ params }: Props) {
                   initialAnonymous={existingValuation != null && existingValuation.contributorName === null}
                 />
               </div>
-              {listing.status === "LIVE" && existingValuation !== null && (
+              {listing.status === "LIVE" && existingValuation !== null && !isReadyToBuy && (
                 <div className="mt-4">
                   <NotifyOptInForm listingId={listing.id} initiallyOptedIn={notificationOptIn?.verifiedAt != null} />
                 </div>

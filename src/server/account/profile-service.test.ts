@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { normalizeContactPhone, normalizeProfileLinks, toWhatsAppDigits, validateHandleFormat } from "./profile-service";
+import {
+  normalizeContactPhone,
+  normalizeEventNotificationEmails,
+  normalizeProfileLinks,
+  toWhatsAppDigits,
+  validateHandleFormat,
+} from "./profile-service";
 
 describe("validateHandleFormat", () => {
   it("normalizes case and trims whitespace", () => {
@@ -48,6 +54,28 @@ describe("toWhatsAppDigits", () => {
 
   it("leaves an already-international number alone", () => {
     expect(toWhatsAppDigits("+918590001090")).toBe("918590001090");
+  });
+});
+
+describe("normalizeEventNotificationEmails", () => {
+  it("lowercases, trims, and drops invalid or duplicate entries", () => {
+    expect(normalizeEventNotificationEmails([
+      "  Sales@Gettecar.in ",
+      "not-an-email",
+      "SALES@gettecar.in",
+      "leads@gettecar.in",
+      42,
+    ])).toEqual(["sales@gettecar.in", "leads@gettecar.in"]);
+  });
+
+  it("returns an empty array for non-array input", () => {
+    expect(normalizeEventNotificationEmails(null)).toEqual([]);
+    expect(normalizeEventNotificationEmails("x@y.z")).toEqual([]);
+  });
+
+  it("caps the list at 10 entries", () => {
+    const many = Array.from({ length: 20 }, (_, i) => `person${i}@example.com`);
+    expect(normalizeEventNotificationEmails(many)).toHaveLength(10);
   });
 });
 

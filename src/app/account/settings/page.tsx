@@ -4,9 +4,10 @@ import { redirect } from "next/navigation";
 import { AvatarUploader } from "@/components/avatar-uploader";
 import { BannerUploader } from "@/components/banner-uploader";
 import { DisplayNameForm } from "@/components/display-name-form";
+import { EventNotificationEmailsForm } from "@/components/event-notification-emails-form";
 import { HandleForm } from "@/components/handle-form";
 import { ProfileDetailsForm } from "@/components/profile-details-form";
-import { normalizeProfileLinks } from "@/server/account/profile-service";
+import { normalizeEventNotificationEmails, normalizeProfileLinks } from "@/server/account/profile-service";
 import { cloudinaryImageUrl } from "@/server/media/cloudinary";
 import { getCurrentSession } from "@/server/auth/session";
 
@@ -68,6 +69,19 @@ export default async function AccountSettingsPage() {
             initialBrandName={session.user.profile?.brandName ?? ""}
             initialContactPhone={session.user.profile?.contactPhone ?? ""}
             initialLinks={normalizeProfileLinks(session.user.profile?.links)}
+          />
+        </div>
+      </div>
+
+      <div className="mt-6 rounded-3xl border border-border bg-surface p-7 shadow-sm">
+        <h2 className="text-lg font-black text-fg">Event notification emails</h2>
+        <p className="mt-1 text-sm text-muted-fg">
+          Emailed whenever someone marks <span className="font-semibold text-fg">Interested to Buy</span> on any of
+          your listings — with their name, phone, and estimate. Your sign-in email always gets these too.
+        </p>
+        <div className="mt-4">
+          <EventNotificationEmailsForm
+            initialEmails={normalizeEventNotificationEmails(session.user.profile?.eventNotificationEmails)}
           />
         </div>
       </div>
