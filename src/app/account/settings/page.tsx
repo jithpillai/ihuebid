@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { AvatarUploader } from "@/components/avatar-uploader";
 import { DisplayNameForm } from "@/components/display-name-form";
 import { HandleForm } from "@/components/handle-form";
+import { ProfileDetailsForm } from "@/components/profile-details-form";
+import { normalizeProfileLinks } from "@/server/account/profile-service";
 import { cloudinaryImageUrl } from "@/server/media/cloudinary";
 import { getCurrentSession } from "@/server/auth/session";
 
@@ -39,6 +41,22 @@ export default async function AccountSettingsPage() {
         <h2 className="text-lg font-black text-fg">Profile photo</h2>
         <div className="mt-4">
           <AvatarUploader initialImageUrl={avatarUrl} />
+        </div>
+      </div>
+
+      <div className="mt-6 rounded-3xl border border-border bg-surface p-7 shadow-sm">
+        <h2 className="text-lg font-black text-fg">Public profile</h2>
+        <p className="mt-1 text-sm text-muted-fg">
+          All optional. These show on your public profile and pre-fill the shareable message on each published listing.
+        </p>
+        <div className="mt-4">
+          <ProfileDetailsForm
+            initialBio={session.user.profile?.bio ?? ""}
+            initialLocation={session.user.profile?.location ?? ""}
+            initialBrandName={session.user.profile?.brandName ?? ""}
+            initialContactPhone={session.user.profile?.contactPhone ?? ""}
+            initialLinks={normalizeProfileLinks(session.user.profile?.links)}
+          />
         </div>
       </div>
 

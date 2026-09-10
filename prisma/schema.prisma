@@ -113,6 +113,12 @@ model UserProfile {
   handle             String?             @unique @db.VarChar(40)
   bio                String?             @db.Text
   location           String?             @db.VarChar(200)
+  // Optional business/contact details, all creator-editable at /account/settings.
+  // Used both on the public profile and to pre-fill the shareable listing message.
+  brandName          String?             @map("brand_name") @db.VarChar(120)
+  contactPhone       String?             @map("contact_phone") @db.VarChar(24)
+  // Typed shape: { website?, instagram?, facebook?, youtube? } — see
+  // normalizeProfileLinks in profile-service.ts.
   links              Json?
   verificationStatus VerificationStatus  @default(NONE) @map("verification_status")
   avatarPublicId     String?             @map("avatar_public_id") @db.VarChar(400)

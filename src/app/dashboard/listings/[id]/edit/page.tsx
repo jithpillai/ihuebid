@@ -8,12 +8,14 @@ import { ListingGalleryUploader } from "@/components/listing-gallery-uploader";
 import { ListingReferenceLinks } from "@/components/listing-reference-links";
 import { PendingLink } from "@/components/pending-link";
 import { PublishListingButton } from "@/components/publish-listing-button";
+import { ShareListingPanel } from "@/components/share-listing-panel";
 import { StatusPill } from "@/components/ui/pill";
 import { AuthError } from "@/server/auth/auth-service";
 import { getCurrentSession } from "@/server/auth/session";
 import { getListingParticipantContacts } from "@/server/listings/interest-service";
 import { getListingForOwner } from "@/server/listings/listing-service";
 import { getListingAggregate } from "@/server/listings/response-service";
+import { buildListingShareMessage } from "@/server/listings/share-message";
 import { cloudinaryImageUrl } from "@/server/media/cloudinary";
 
 export const metadata: Metadata = { title: "Edit listing", robots: { index: false, follow: false } };
@@ -41,6 +43,26 @@ export default async function EditListingPage({ params }: Props) {
   const contacts = listing.status !== "DRAFT" ? await getListingParticipantContacts(listing.id) : [];
   const dateFormatter = new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "numeric" });
 
+  const isPublished = listing.status === "LIVE" || listing.status === "PAUSED" || listing.status === "CLOSED";
+  const profile = session.user.profile;
+  const shareMessage = isPublished && handle
+    ? buildListingShareMessage({
+        listing: {
+          title: listing.title,
+          fieldValues: Object.fromEntries(listing.fieldValues.map((field) => [field.fieldKey, field.fieldValue])),
+          ownerExpectedPrice: listing.ownerExpectedPrice != null ? Number(listing.ownerExpectedPrice) : null,
+          currency: listing.currency,
+          locationText: listing.locationText,
+        },
+        profile: {
+          brandName: profile?.brandName ?? null,
+          location: profile?.location ?? null,
+          contactPhone: profile?.contactPhone ?? null,
+        },
+        url: `${(process.env.APP_URL ?? "http://localhost:3000").replace(/\/$/, "")}/${handle}/${listing.publicId}`,
+      })
+    : null;
+
   return (
     <section className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
       <PendingLink href="/dashboard" className="text-sm font-semibold text-muted-fg transition hover:text-fg">
@@ -55,6 +77,21 @@ export default async function EditListingPage({ params }: Props) {
         <PendingLink href={`/${handle}/${listing.publicId}`} className="mt-2 inline-block text-sm font-semibold text-accent-soft-fg hover:underline">
           View public listing →
         </PendingLink>
+      )}
+
+      {shareMessage && (
+        <div className="mt-8 rounded-3xl border border-border bg-surface p-7 shadow-sm">
+          <h2 className="text-sm font-black uppercase tracking-wide text-subtle-fg">Share this listing</h2>
+          <p className="mt-1 text-sm text-muted-fg">
+            A ready-to-post message with your listing link. Edit it, then share or copy.
+          </p>
+          <div className="mt-4">
+            <ShareListingPanel
+              initialMessage={shareMessage}
+              profileIncomplete={!profile?.brandName || !profile?.contactPhone}
+            />
+          </div>
+        </div>
       )}
 
       {aggregate && (

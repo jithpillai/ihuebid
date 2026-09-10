@@ -50,6 +50,79 @@ export async function setUserHandle(userId: string, rawHandle: string) {
   }
 }
 
+// --- Optional public profile details ---------------------------------------
+
+export type ProfileLinks = {
+  website?: string;
+  instagram?: string;
+  facebook?: string;
+  youtube?: string;
+};
+
+const PROFILE_LINK_KEYS = ["website", "instagram", "facebook", "youtube"] as const;
+const MAX_LINK_LENGTH = 300;
+
+// Keep only well-formed http(s) URLs, one per known network. Anything else is
+// dropped silently so a stray value never ends up rendered as a link.
+export function normalizeProfileLinks(raw: unknown): ProfileLinks {
+  const source = raw && typeof raw === "object" ? raw as Record<string, unknown> : {};
+  const links: ProfileLinks = {};
+  for (const key of PROFILE_LINK_KEYS) {
+    const value = typeof source[key] === "string" ? source[key].trim() : "";
+    if (!value || value.length > MAX_LINK_LENGTH) continue;
+    if (!/^https?:\/\/\S+$/i.test(value)) continue;
+    links[key] = value;
+  }
+  return links;
+}
+
+// Strip to a single optional leading "+" and digits. Null unless it looks like
+// a real phone number (7–15 digits, E.164's range).
+export function normalizeContactPhone(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  const trimmed = raw.trim();
+  const hasPlus = trimmed.startsWith("+");
+  const digits = trimmed.replace(/\D/g, "");
+  if (digits.length < 7 || digits.length > 15) return null;
+  return hasPlus ? `+${digits}` : digits;
+}
+
+// Digits-only form for a wa.me / api.whatsapp.com link. A bare 10-digit number
+// is assumed to be Indian (+91) since that's the product's market.
+export function toWhatsAppDigits(phone: string): string {
+  const digits = phone.replace(/\D/g, "");
+  return digits.length === 10 ? `91${digits}` : digits;
+}
+
+export type ProfileDetailsInput = {
+  bio?: string;
+  location?: string;
+  brandName?: string;
+  contactPhone?: string;
+  links?: unknown;
+};
+
+function trimToNull(value: string | undefined, max: number): string | null {
+  const trimmed = (value ?? "").replace(/\s+/g, " ").trim().slice(0, max);
+  return trimmed || null;
+}
+
+export async function updateProfileDetails(userId: string, input: ProfileDetailsInput) {
+  const data = {
+    bio: (input.bio ?? "").trim().slice(0, 500) || null,
+    location: trimToNull(input.location, 200),
+    brandName: trimToNull(input.brandName, 120),
+    contactPhone: normalizeContactPhone(input.contactPhone),
+    links: normalizeProfileLinks(input.links) as Prisma.InputJsonValue,
+  };
+  return db.userProfile.upsert({
+    where: { userId },
+    create: { userId, ...data },
+    update: data,
+    select: { bio: true, location: true, brandName: true, contactPhone: true, links: true },
+  });
+}
+
 export const MAX_DISPLAY_NAME_LENGTH = 120;
 
 export function normalizeDisplayName(rawName: string): string {
