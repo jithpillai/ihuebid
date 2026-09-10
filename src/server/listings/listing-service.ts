@@ -115,7 +115,7 @@ export async function listListingsForCreator(creatorId: string) {
   return db.listing.findMany({
     where: { creatorId },
     orderBy: { createdAt: "desc" },
-    include: { mediaAssets: { orderBy: { sortOrder: "asc" }, take: 1 } },
+    include: { mediaAssets: { orderBy: { sortOrder: "asc" }, take: 1 }, fieldValues: true },
   });
 }
 

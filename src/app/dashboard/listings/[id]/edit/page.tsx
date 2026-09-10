@@ -112,6 +112,10 @@ export default async function EditListingPage({ params }: Props) {
           </p>
           <div className="mt-4">
             <ShareListingPanel
+              // Remount when the effective message identity changes — after a
+              // listing-detail edit + router.refresh(), the freshly generated
+              // message must replace the panel's stale in-state copy.
+              key={listing.shareMessage ?? generatedShareMessage}
               listingId={listing.id}
               generatedMessage={generatedShareMessage}
               savedMessage={listing.shareMessage}

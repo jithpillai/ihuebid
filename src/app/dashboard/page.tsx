@@ -8,7 +8,11 @@ import { Card } from "@/components/ui/card";
 import { Stat, StatRow } from "@/components/ui/stat";
 import { getCurrentSession } from "@/server/auth/session";
 import { listListingsForCreatorWithStats } from "@/server/listings/listing-service";
+import { buildListingShareMessage } from "@/server/listings/share-message";
 import { cloudinaryImageUrl } from "@/server/media/cloudinary";
+
+const appUrl = () => (process.env.APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
+const PUBLISHED = new Set(["LIVE", "PAUSED", "CLOSED"]);
 
 export const metadata: Metadata = { title: "Dashboard", robots: { index: false, follow: false } };
 
@@ -97,6 +101,26 @@ export default async function DashboardPage() {
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {listings.map((listing) => {
             const cover = listing.mediaAssets[0];
+            const shareable = handle && PUBLISHED.has(listing.status);
+            const shareUrl = shareable ? `${appUrl()}/${handle}/${listing.publicId}` : undefined;
+            const copyText = shareUrl
+              ? (listing.shareMessage ?? buildListingShareMessage({
+                  listing: {
+                    title: listing.title,
+                    fieldValues: Object.fromEntries(listing.fieldValues.map((f) => [f.fieldKey, f.fieldValue])),
+                    ownerExpectedPrice: listing.ownerExpectedPrice != null ? Number(listing.ownerExpectedPrice) : null,
+                    currency: listing.currency,
+                    locationText: listing.locationText,
+                    description: listing.description,
+                  },
+                  profile: {
+                    brandName: session.user.profile?.brandName ?? null,
+                    location: session.user.profile?.location ?? null,
+                    contactPhone: session.user.profile?.contactPhone ?? null,
+                  },
+                  url: shareUrl,
+                }))
+              : undefined;
             return (
               <ListingCard
                 key={listing.id}
@@ -104,6 +128,9 @@ export default async function DashboardPage() {
                 title={listing.title}
                 coverUrl={cover ? cloudinaryImageUrl({ publicId: cover.publicId }) : null}
                 status={listing.status}
+                shareUrl={shareUrl}
+                shareTitle={listing.title}
+                copyText={copyText}
                 responseCount={listing.responseCount}
                 meta={new Date(listing.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
               />

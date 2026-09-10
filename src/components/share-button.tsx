@@ -11,6 +11,61 @@ function ShareIcon({ className = "size-4" }: { className?: string }) {
   );
 }
 
+function CopyIcon({ className = "size-4" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <rect x="9" y="9" width="11" height="11" rx="2" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M5 15V6a2 2 0 0 1 2-2h8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function CheckIcon({ className = "size-4" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path d="m5 13 4 4L19 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+// Icon button that copies `text` to the clipboard — used on cards to grab the
+// WhatsApp-formatted listing message.
+export function CopyButton({
+  text,
+  className = "",
+  label = "Copy message",
+}: {
+  text: string;
+  className?: string;
+  label?: string;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  async function onClick(event: React.MouseEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* clipboard unavailable */
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      title={copied ? "Copied" : label}
+      className={`inline-flex size-8 items-center justify-center rounded-full border border-border bg-bg/90 text-body shadow-sm backdrop-blur transition hover:border-accent hover:text-fg ${className}`}
+    >
+      {copied ? <CheckIcon className="size-4 text-emerald-600 dark:text-emerald-400" /> : <CopyIcon />}
+    </button>
+  );
+}
+
 // A single share control. Prefers the native share sheet (which surfaces
 // WhatsApp on mobile); otherwise opens WhatsApp web; copy-link as the last
 // resort. `text` defaults to `title`.

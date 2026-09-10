@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { CardNavOverlay } from "@/components/pending-link";
-import { ShareButton } from "@/components/share-button";
+import { CopyButton, ShareButton } from "@/components/share-button";
 import { StatusPill } from "@/components/ui/pill";
 
 export function ListingCard({
@@ -15,6 +15,7 @@ export function ListingCard({
   priceLabel,
   shareUrl,
   shareTitle,
+  copyText,
 }: {
   href: string;
   title: string;
@@ -25,6 +26,7 @@ export function ListingCard({
   priceLabel?: string;
   shareUrl?: string;
   shareTitle?: string;
+  copyText?: string;
 }) {
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-3xl border border-border bg-surface shadow-sm shadow-black/[0.03] transition hover:-translate-y-0.5 hover:border-border-strong hover:shadow-md dark:shadow-black/20">
@@ -74,13 +76,11 @@ export function ListingCard({
         </div>
       </div>
 
-      {shareUrl && (
-        <ShareButton
-          variant="icon"
-          className="pointer-events-auto absolute right-3 top-3 z-10"
-          url={shareUrl}
-          title={shareTitle ?? title}
-        />
+      {(shareUrl || copyText) && (
+        <div className="pointer-events-auto absolute right-3 top-3 z-10 flex gap-1.5">
+          {copyText && <CopyButton text={copyText} />}
+          {shareUrl && <ShareButton variant="icon" url={shareUrl} title={shareTitle ?? title} />}
+        </div>
       )}
     </div>
   );
