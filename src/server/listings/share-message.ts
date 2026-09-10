@@ -1,6 +1,6 @@
-// Pure, deterministic builder for the shareable listing message shown (fully
-// editable) on the creator's listing edit page. No I/O — the edit page passes
-// in the already-loaded listing + profile and the resolved public URL.
+// Pure, deterministic builder for the shareable listing message. No I/O and no
+// AI — the caller passes in the already-loaded listing + profile and the
+// resolved public URL. Formatted for WhatsApp (`*bold*`, `_italic_`).
 
 export type ShareMessageListing = {
   title: string;
@@ -8,6 +8,7 @@ export type ShareMessageListing = {
   ownerExpectedPrice: number | null;
   currency: string;
   locationText: string | null;
+  description: string | null;
 };
 
 export type ShareMessageProfile = {
@@ -16,8 +17,12 @@ export type ShareMessageProfile = {
   contactPhone: string | null;
 };
 
-function clean(value: string | undefined): string {
+function clean(value: string | undefined | null): string {
   return (value ?? "").replace(/\s+/g, " ").trim();
+}
+
+function truncate(value: string, max: number): string {
+  return value.length > max ? `${value.slice(0, max - 1).trimEnd()}…` : value;
 }
 
 // "₹20.50 lakh" for anything from ₹1,00,000 up, else a plain grouped figure.
@@ -32,28 +37,51 @@ export function formatIndianPrice(amount: number, currency = "INR"): string {
   return currency === "INR" ? `₹${grouped}` : `${grouped} ${currency}`;
 }
 
-function vehicleClause(fields: Record<string, string>): string {
-  const parts: string[] = [];
+function formatKm(raw: string): string {
+  const km = Number(raw);
+  if (Number.isNaN(km)) return "";
+  return `${km.toLocaleString("en-IN")} km`;
+}
 
-  const modelYear = clean(fields.modelYear);
-  if (modelYear) parts.push(`${modelYear} model`);
+function detailLines(fields: Record<string, string>): string[] {
+  const lines: string[] = [];
+  const add = (label: string, value: string) => {
+    if (value) lines.push(`• *${label}:* ${value}`);
+  };
 
-  const registrationLocation = clean(fields.registrationLocation);
-  if (registrationLocation) parts.push(`${registrationLocation} registration`);
+  add("Make", clean(fields.make));
 
-  const ownershipCount = clean(fields.ownershipCount);
-  if (ownershipCount && !Number.isNaN(Number(ownershipCount))) {
-    const count = Number(ownershipCount);
-    parts.push(count === 1 ? "single-owner" : `${count}-owner`);
+  const model = clean(fields.model);
+  const variant = clean(fields.variant);
+  add("Model", variant ? `${model} (${variant})` : model);
+
+  const year = clean(fields.modelYear);
+  const regLocation = clean(fields.registrationLocation);
+  add("Year", [year, regLocation && `${regLocation} registration`].filter(Boolean).join(" · "));
+
+  const km = clean(fields.kmDriven);
+  if (km) add("Odometer", formatKm(km));
+
+  const fuel = clean(fields.fuelType);
+  const transmission = clean(fields.transmission);
+  add("Fuel · Transmission", [fuel, transmission].filter(Boolean).join(" · "));
+
+  const owners = clean(fields.ownershipCount);
+  if (owners && !Number.isNaN(Number(owners))) {
+    const count = Number(owners);
+    add("Owners", count === 1 ? "Single owner" : String(count));
   }
 
-  const kmDriven = clean(fields.kmDriven);
-  if (kmDriven && !Number.isNaN(Number(kmDriven))) {
-    const km = Number(kmDriven);
-    parts.push(km >= 1000 ? `${Math.round(km / 1000)}k km` : `${km} km`);
-  }
+  const serviceHistory = clean(fields.serviceHistory);
+  if (serviceHistory) add("Service history", truncate(serviceHistory, 120));
 
-  return parts.join(", ");
+  const accident = clean(fields.accidentDisclosure);
+  if (accident) add("Accident / insurance", truncate(accident, 120));
+
+  const defects = clean(fields.knownDefects);
+  if (defects) add("Known issues", truncate(defects, 120));
+
+  return lines;
 }
 
 export function buildListingShareMessage(args: {
@@ -62,46 +90,38 @@ export function buildListingShareMessage(args: {
   url: string;
 }): string {
   const { listing, profile, url } = args;
-  const lines: string[] = [];
+  const brand = clean(profile.brandName);
+  const brandCity = clean(profile.location);
+  const sections: string[] = [];
 
-  // Header
-  const brand = clean(profile.brandName ?? undefined);
-  const brandCity = clean(profile.location ?? undefined);
-  let header = "Today's spotlight used-vehicle deal";
-  if (brand && brandCity) header += ` @${brand} ${brandCity}`;
-  else if (brand) header += ` @${brand}`;
-  else if (brandCity) header += ` in ${brandCity}`;
-  lines.push(`${header}!`);
+  // Header — title + brand · city
+  const badge = [brand, brandCity].filter(Boolean).join(", ");
+  sections.push(`🚗 *${clean(listing.title)}*${badge ? ` · ${badge}` : ""}`);
 
-  // Vehicle
-  const clause = vehicleClause(listing.fieldValues);
-  const accessories = clean(listing.fieldValues.accessories);
-  let vehicle = clean(listing.title);
-  if (clause) vehicle += ` — ${clause}`;
-  if (vehicle) {
-    vehicle += ".";
-    if (accessories) vehicle += ` ${accessories.replace(/\.$/, "")}.`;
-    lines.push(vehicle);
-  }
+  // Description (the AI-written or hand-written listing summary)
+  const description = clean(listing.description);
+  if (description) sections.push(`_${truncate(description, 400)}_`);
 
-  // Price
+  // Vehicle details — label:value list
+  const details = detailLines(listing.fieldValues);
+  if (details.length > 0) sections.push(["📋 *Vehicle details*", ...details].join("\n"));
+
+  // Price · viewing · contact
+  const facts: string[] = [];
   const price = listing.ownerExpectedPrice != null
     ? formatIndianPrice(listing.ownerExpectedPrice, listing.currency)
     : "";
-  if (price) lines.push(`Expected price ${price}* (slightly negotiable, T&C apply).`);
+  if (price) facts.push(`💰 *Expected price:* ${price} _(negotiable, T&C apply)_`);
 
-  // Contact
-  const viewingLocation = clean(listing.locationText ?? undefined) || brandCity;
-  let contact = "";
-  if (viewingLocation) contact += `Located in ${viewingLocation} for viewing. `;
-  contact += "Interested buyers — DM";
-  const phone = clean(profile.contactPhone ?? undefined);
-  if (phone) contact += `, or WhatsApp ${phone}`;
-  contact += ".";
-  lines.push(contact);
+  const viewing = clean(listing.locationText) || brandCity;
+  if (viewing) facts.push(`📍 *Viewing:* ${viewing}`);
 
-  // URL
-  lines.push(url);
+  const phone = clean(profile.contactPhone);
+  if (phone) facts.push(`📞 *Contact:* WhatsApp ${phone}`);
+  if (facts.length > 0) sections.push(facts.join("\n"));
 
-  return lines.join("\n\n");
+  // Call to action + link
+  sections.push(`👉 Photos & your estimate:\n${url}`);
+
+  return sections.join("\n\n");
 }

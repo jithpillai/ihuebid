@@ -236,6 +236,15 @@ export async function publishListing(session: SessionShape, listingId: string) {
   return db.listing.update({ where: { id: listingId }, data: { status: "LIVE", publishAt: new Date() } });
 }
 
+// Persist (or clear, with null) the creator's hand-edited share message.
+// Null falls the app back to the generated template output everywhere.
+export async function setListingShareMessage(session: SessionShape, listingId: string, message: string | null) {
+  const listing = await getListingForOwner(listingId, session);
+  const trimmed = message?.trim().slice(0, 4000) || null;
+  await db.listing.update({ where: { id: listing.id }, data: { shareMessage: trimmed } });
+  return { shareMessage: trimmed };
+}
+
 export async function setListingEmbed(session: SessionShape, listingId: string, url: string) {
   const embedUrl = toYouTubeEmbedUrl(url);
   if (!embedUrl) throw new AuthError("INVALID_EMBED", "Enter a valid YouTube video link.");

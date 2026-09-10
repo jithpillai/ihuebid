@@ -60,14 +60,15 @@ export default async function EditListingPage({ params }: Props) {
     fieldValues: Object.fromEntries(listing.fieldValues.map((field) => [field.fieldKey, field.fieldValue])),
   };
   const profile = session.user.profile;
-  const shareMessage = isPublished && handle
+  const generatedShareMessage = isPublished && handle
     ? buildListingShareMessage({
         listing: {
           title: listing.title,
-          fieldValues: Object.fromEntries(listing.fieldValues.map((field) => [field.fieldKey, field.fieldValue])),
+          fieldValues: listingFormInitial.fieldValues,
           ownerExpectedPrice: listing.ownerExpectedPrice != null ? Number(listing.ownerExpectedPrice) : null,
           currency: listing.currency,
           locationText: listing.locationText,
+          description: listing.description,
         },
         profile: {
           brandName: profile?.brandName ?? null,
@@ -102,15 +103,18 @@ export default async function EditListingPage({ params }: Props) {
         </div>
       </div>
 
-      {shareMessage && (
+      {generatedShareMessage && (
         <div className="mt-8 rounded-3xl border border-border bg-surface p-7 shadow-sm">
           <h2 className="text-sm font-black uppercase tracking-wide text-subtle-fg">Share this listing</h2>
           <p className="mt-1 text-sm text-muted-fg">
-            A ready-to-post message with your listing link. Edit it, then share or copy.
+            A ready-to-post WhatsApp message. Edit and save your own version — it&rsquo;s what the public share
+            buttons use too.
           </p>
           <div className="mt-4">
             <ShareListingPanel
-              initialMessage={shareMessage}
+              listingId={listing.id}
+              generatedMessage={generatedShareMessage}
+              savedMessage={listing.shareMessage}
               profileIncomplete={!profile?.brandName || !profile?.contactPhone}
             />
           </div>

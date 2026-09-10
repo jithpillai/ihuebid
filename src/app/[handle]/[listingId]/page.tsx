@@ -5,12 +5,16 @@ import { notFound } from "next/navigation";
 import { AggregateResultPanel } from "@/components/aggregate-result-panel";
 import { NotifyOptInForm } from "@/components/notify-optin-form";
 import { PendingLink } from "@/components/pending-link";
+import { ShareButton } from "@/components/share-button";
 import { ValuationForm } from "@/components/valuation-form";
 import { StatusPill } from "@/components/ui/pill";
 import { getListingByPublicId } from "@/server/listings/listing-service";
 import { getListingAggregate, getParticipantValuation } from "@/server/listings/response-service";
+import { buildListingShareMessage } from "@/server/listings/share-message";
 import { usedVehicleFieldByKey } from "@/server/listings/templates/used-vehicle";
-import { cloudinaryImageUrl } from "@/server/media/cloudinary";
+import { cloudinaryImageUrl, cloudinaryOgImageUrl } from "@/server/media/cloudinary";
+
+const appUrl = () => (process.env.APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
 import { getParticipantIdentity } from "@/server/participant/identity-service";
 import { getNotificationOptIn } from "@/server/participant/notification-service";
 
@@ -34,14 +38,26 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const listing = await loadListing(handle, listingId);
   if (!listing) return { title: "Listing not found" };
   const cover = listing.mediaAssets[0];
-  const imageUrl = cover ? cloudinaryImageUrl({ publicId: cover.publicId }) : undefined;
+  const description = listing.description ?? `What is a fair price for this ${listing.title}?`;
+  const ogImage = cover ? cloudinaryOgImageUrl({ publicId: cover.publicId }) : undefined;
+  const url = `${appUrl()}/${handle}/${listing.publicId}`;
   return {
     title: listing.title,
-    description: listing.description ?? `What is a fair price for this ${listing.title}?`,
+    description,
+    alternates: { canonical: url },
     openGraph: {
+      type: "website",
+      siteName: "ihue Bid",
+      url,
       title: listing.title,
-      description: listing.description ?? `What is a fair price for this ${listing.title}?`,
-      images: imageUrl ? [imageUrl] : undefined,
+      description,
+      images: ogImage ? [{ url: ogImage, width: 1200, height: 630 }] : undefined,
+    },
+    twitter: {
+      card: ogImage ? "summary_large_image" : "summary",
+      title: listing.title,
+      description,
+      images: ogImage ? [ogImage] : undefined,
     },
   };
 }
@@ -70,6 +86,24 @@ export default async function PublicListingPage({ params }: Props) {
   const heroImage = listing.mediaAssets[0];
   const restImages = listing.mediaAssets.slice(1);
 
+  const shareUrl = `${appUrl()}/${handle}/${listing.publicId}`;
+  const shareText = listing.shareMessage ?? buildListingShareMessage({
+    listing: {
+      title: listing.title,
+      fieldValues: Object.fromEntries(listing.fieldValues.map((field) => [field.fieldKey, field.fieldValue])),
+      ownerExpectedPrice: listing.ownerExpectedPrice != null ? Number(listing.ownerExpectedPrice) : null,
+      currency: listing.currency,
+      locationText: listing.locationText,
+      description: listing.description,
+    },
+    profile: {
+      brandName: listing.creator.profile?.brandName ?? null,
+      location: listing.creator.profile?.location ?? null,
+      contactPhone: listing.creator.profile?.contactPhone ?? null,
+    },
+    url: shareUrl,
+  });
+
   return (
     <article className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
       <PendingLink href={`/${handle}`} className="text-sm font-semibold text-muted-fg transition hover:text-fg">
@@ -79,6 +113,7 @@ export default async function PublicListingPage({ params }: Props) {
       <div className="mt-3 flex flex-wrap items-center gap-3">
         <h1 className="text-3xl font-black tracking-tight text-fg sm:text-4xl">{listing.title}</h1>
         <StatusPill status={listing.status} />
+        <ShareButton variant="button" className="ml-auto" url={shareUrl} title={listing.title} text={shareText} />
       </div>
       {listing.locationText && <p className="mt-1 text-sm font-semibold text-subtle-fg">{listing.locationText}</p>}
 

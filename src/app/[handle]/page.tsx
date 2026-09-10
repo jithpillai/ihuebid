@@ -3,22 +3,45 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 
 import { ListingCard } from "@/components/listing-card";
+import { ShareButton } from "@/components/share-button";
 import { EmptyState, icons } from "@/components/ui/empty-state";
 import { Pill } from "@/components/ui/pill";
 import { Stat, StatRow } from "@/components/ui/stat";
 import { getPublicProfileByHandle, normalizeProfileLinks, toWhatsAppDigits } from "@/server/account/profile-service";
 import { listPublicListingsForHandleWithStats } from "@/server/listings/listing-service";
-import { cloudinaryImageUrl } from "@/server/media/cloudinary";
+import { cloudinaryImageUrl, cloudinaryOgImageUrl } from "@/server/media/cloudinary";
 
 type Props = { params: Promise<{ handle: string }> };
+
+const appUrl = () => (process.env.APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { handle } = await params;
   const profile = await getPublicProfileByHandle(handle);
   if (!profile) return { title: "Creator not found" };
+  const description = profile.bio ?? `Listings and market signals from ${profile.user.displayName}.`;
+  const url = `${appUrl()}/${profile.handle}`;
+  const firstCover = await listPublicListingsForHandleWithStats(profile.userId)
+    .then((rows) => rows[0]?.mediaAssets[0]?.publicId);
+  const ogImage = firstCover ? cloudinaryOgImageUrl({ publicId: firstCover }) : undefined;
   return {
     title: profile.user.displayName,
-    description: profile.bio ?? `Listings and market signals from ${profile.user.displayName}.`,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      type: "profile",
+      siteName: "ihue Bid",
+      url,
+      title: profile.user.displayName,
+      description,
+      images: ogImage ? [{ url: ogImage, width: 1200, height: 630 }] : undefined,
+    },
+    twitter: {
+      card: ogImage ? "summary_large_image" : "summary",
+      title: profile.user.displayName,
+      description,
+      images: ogImage ? [ogImage] : undefined,
+    },
   };
 }
 
@@ -73,6 +96,12 @@ export default async function CreatorProfilePage({ params }: Props) {
           {profile.brandName && <p className="mt-1 text-sm font-bold text-muted-fg">{profile.brandName}</p>}
           <p className="mt-1 text-sm font-semibold text-subtle-fg">bid.ihue.in/{profile.handle}</p>
         </div>
+        <ShareButton
+          variant="button"
+          className="sm:ml-auto"
+          url={`${appUrl()}/${profile.handle}`}
+          title={`${profile.user.displayName} on ihue Bid`}
+        />
       </div>
 
       {profile.bio && <p className="mt-5 max-w-2xl text-base leading-7 text-body">{profile.bio}</p>}
@@ -140,6 +169,8 @@ export default async function CreatorProfilePage({ params }: Props) {
                 title={listing.title}
                 coverUrl={cover ? cloudinaryImageUrl({ publicId: cover.publicId }) : null}
                 status={listing.status}
+                shareUrl={`${appUrl()}/${profile.handle}/${listing.publicId}`}
+                shareTitle={listing.title}
                 responseCount={listing.responseCount}
                 meta={listing.locationText ?? undefined}
               />

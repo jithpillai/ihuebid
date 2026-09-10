@@ -147,13 +147,16 @@ export default async function HomePage() {
               {listings.map((listing) => {
                 const cover = listing.mediaAssets[0];
                 const handle = listing.creator.profile?.handle;
+                const listingHref = handle ? `/${handle}/${listing.publicId}` : "#";
                 return (
                   <ListingCard
                     key={listing.id}
-                    href={handle ? `/${handle}/${listing.publicId}` : "#"}
+                    href={listingHref}
                     title={listing.title}
                     coverUrl={cover ? cloudinaryImageUrl({ publicId: cover.publicId }) : null}
                     status={listing.status}
+                    shareUrl={handle ? `${(process.env.APP_URL ?? "http://localhost:3000").replace(/\/$/, "")}${listingHref}` : undefined}
+                    shareTitle={listing.title}
                     meta={[listing.creator.displayName, listing.locationText].filter(Boolean).join(" · ")}
                   />
                 );

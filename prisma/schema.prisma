@@ -207,6 +207,11 @@ model Listing {
   closeAt              DateTime?            @map("close_at") @db.Timestamptz(3)
   status               ListingStatus        @default(DRAFT)
   disclosureText       String?              @map("disclosure_text") @db.Text
+  // Creator's saved/edited WhatsApp share message. Null ⇒ the app shows the
+  // freshly generated template output (buildListingShareMessage); a value ⇒
+  // the creator hand-edited it and that version is used everywhere, including
+  // the public share buttons. Only ever written by an explicit Save.
+  shareMessage         String?              @map("share_message") @db.Text
   closureOutcome       ClosureOutcome?      @map("closure_outcome")
   closureFinalPrice    Decimal?             @map("closure_final_price") @db.Decimal(14, 2)
   closureNote          String?              @map("closure_note") @db.Text

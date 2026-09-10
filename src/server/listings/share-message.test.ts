@@ -21,58 +21,82 @@ describe("formatIndianPrice", () => {
 describe("buildListingShareMessage", () => {
   const base = {
     listing: {
-      title: "BMW X1 S Drive 20D Diesel Automatic",
+      title: "2019 Hyundai Creta SX Petrol Manual",
       fieldValues: {
-        modelYear: "2017",
+        make: "Hyundai",
+        model: "Creta",
+        variant: "SX",
+        modelYear: "2019",
         registrationLocation: "KA",
-        ownershipCount: "2",
-        kmDriven: "67000",
-        accessories: "New tyres, valid insurance, clear title",
+        kmDriven: "52000",
+        fuelType: "Petrol",
+        transmission: "Manual",
+        ownershipCount: "1",
+        serviceHistory: "Full service history at authorised dealer",
       },
-      ownerExpectedPrice: 2050000,
+      ownerExpectedPrice: 950000,
       currency: "INR",
-      locationText: null,
+      locationText: "Kochi",
+      description: "Well-kept single-owner Creta with no accident claims.",
     },
-    profile: { brandName: "Gettecar dealership", location: "Bengaluru", contactPhone: "8590001090" },
-    url: "https://bid.ihue.in/gettecar/EdKL6Geu",
+    profile: { brandName: "Gettecar", location: "Bengaluru", contactPhone: "8590001090" },
+    url: "https://bid.ihue.in/gettecar/kGQr2eeJ",
   };
 
-  it("composes the full message from listing + profile + url", () => {
-    const message = buildListingShareMessage(base);
-    expect(message).toBe(
+  it("composes an emoji + label:value message", () => {
+    expect(buildListingShareMessage(base)).toBe(
       [
-        "Today's spotlight used-vehicle deal @Gettecar dealership Bengaluru!",
-        "BMW X1 S Drive 20D Diesel Automatic — 2017 model, KA registration, 2-owner, 67k km. New tyres, valid insurance, clear title.",
-        "Expected price ₹20.50 lakh* (slightly negotiable, T&C apply).",
-        "Located in Bengaluru for viewing. Interested buyers — DM, or WhatsApp 8590001090.",
-        "https://bid.ihue.in/gettecar/EdKL6Geu",
+        "🚗 *2019 Hyundai Creta SX Petrol Manual* · Gettecar, Bengaluru",
+        "_Well-kept single-owner Creta with no accident claims._",
+        [
+          "📋 *Vehicle details*",
+          "• *Make:* Hyundai",
+          "• *Model:* Creta (SX)",
+          "• *Year:* 2019 · KA registration",
+          "• *Odometer:* 52,000 km",
+          "• *Fuel · Transmission:* Petrol · Manual",
+          "• *Owners:* Single owner",
+          "• *Service history:* Full service history at authorised dealer",
+        ].join("\n"),
+        [
+          "💰 *Expected price:* ₹9.50 lakh _(negotiable, T&C apply)_",
+          "📍 *Viewing:* Kochi",
+          "📞 *Contact:* WhatsApp 8590001090",
+        ].join("\n"),
+        "👉 Photos & your estimate:\nhttps://bid.ihue.in/gettecar/kGQr2eeJ",
       ].join("\n\n"),
     );
   });
 
-  it("omits the price line when no expected price is set", () => {
+  it("skips sections whose inputs are missing", () => {
     const message = buildListingShareMessage({
-      ...base,
-      listing: { ...base.listing, ownerExpectedPrice: null },
+      listing: {
+        title: "Honda City",
+        fieldValues: { make: "Honda", model: "City" },
+        ownerExpectedPrice: null,
+        currency: "INR",
+        locationText: null,
+        description: null,
+      },
+      profile: { brandName: null, location: null, contactPhone: null },
+      url: "https://bid.ihue.in/x/y",
     });
+    expect(message).toBe(
+      [
+        "🚗 *Honda City*",
+        "📋 *Vehicle details*\n• *Make:* Honda\n• *Model:* City",
+        "👉 Photos & your estimate:\nhttps://bid.ihue.in/x/y",
+      ].join("\n\n"),
+    );
     expect(message).not.toContain("Expected price");
+    expect(message).not.toContain("Contact");
   });
 
-  it("omits the WhatsApp clause when there is no contact phone", () => {
+  it("falls back to the brand city for viewing when the listing has no location", () => {
     const message = buildListingShareMessage({
       ...base,
-      profile: { ...base.profile, contactPhone: null },
+      listing: { ...base.listing, locationText: null },
     });
-    expect(message).toContain("Interested buyers — DM.");
-    expect(message).not.toContain("WhatsApp");
-  });
-
-  it("uses 'single-owner' for one owner and prefers the listing's own location", () => {
-    const message = buildListingShareMessage({
-      ...base,
-      listing: { ...base.listing, fieldValues: { ...base.listing.fieldValues, ownershipCount: "1" }, locationText: "Whitefield, Bengaluru" },
-    });
-    expect(message).toContain("single-owner");
-    expect(message).toContain("Located in Whitefield, Bengaluru for viewing.");
+    expect(message).toContain("📍 *Viewing:* Bengaluru");
   });
 });
