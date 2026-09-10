@@ -52,10 +52,18 @@ export function ProfileMenu({ displayName }: { displayName: string }) {
         >
           <p className="truncate px-1 text-sm font-semibold text-fg">{displayName}</p>
           <div className="mt-2 flex flex-col gap-1 border-t border-border pt-2">
-            <Link href="/dashboard" className="rounded-lg px-1 py-1.5 text-sm font-semibold text-body hover:bg-muted">
+            <Link
+              href="/dashboard"
+              onClick={() => setOpen(false)}
+              className="rounded-lg px-1 py-1.5 text-sm font-semibold text-body transition hover:bg-muted active:bg-muted"
+            >
               Dashboard
             </Link>
-            <Link href="/account/settings" className="rounded-lg px-1 py-1.5 text-sm font-semibold text-body hover:bg-muted">
+            <Link
+              href="/account/settings"
+              onClick={() => setOpen(false)}
+              className="rounded-lg px-1 py-1.5 text-sm font-semibold text-body transition hover:bg-muted active:bg-muted"
+            >
               Account settings
             </Link>
           </div>
