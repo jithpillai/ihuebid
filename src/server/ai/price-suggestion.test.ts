@@ -83,8 +83,8 @@ describe("buildPriceSuggestionPrompt", () => {
     const { prompt } = buildPriceSuggestionPrompt({ currency: "INR", fieldValues: { make: "Honda", model: "City", modelYear: "2020" } });
     expect(prompt.toLowerCase()).toContain("price range");
     expect(prompt.toLowerCase()).toContain("description");
-    expect(prompt.toLowerCase()).toContain("strengths");
-    expect(prompt.toLowerCase()).toContain("do not restate the facts");
+    expect(prompt.toLowerCase()).toContain("selling points");
+    expect(prompt.toLowerCase()).toContain("do not restate the listing facts");
   });
 
   it("omits fields that weren't filled in", () => {

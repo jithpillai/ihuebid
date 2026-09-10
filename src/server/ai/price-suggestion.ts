@@ -14,10 +14,11 @@ export type PriceSuggestion = {
   // call. Empty string if the model returned nothing usable — the form then
   // falls back to its deterministic description suggestion.
   description: string;
-  // 3-4 short well-known strengths of this make+model from general knowledge
-  // (mileage, reliability, resale, practicality, off-road ability, brand
-  // reputation…) — NOT a restatement of the listing facts. Folded into the
-  // description as a bullet list when the creator applies the draft.
+  // 3-4 open-ended selling points of this make/model/variant from general
+  // knowledge — efficiency, reliability, resale, performance/power, rarity,
+  // standout features, brand reputation, whatever adds resale appeal — NOT a
+  // restatement of the listing facts. Folded into the description as a bullet
+  // list when the creator applies the draft.
   highlights: string[];
 };
 
@@ -70,7 +71,7 @@ export function buildPriceSuggestionPrompt(input: PriceSuggestionInput): { promp
     "Given the following vehicle facts, do two things for this exact vehicle:",
     "1. Suggest a realistic resale price range in the current Indian used-vehicle market. Be conservative and realistic — this is a rough starting-point estimate for a seller, not verified market data.",
     "2. Write a clear, factual 2-4 sentence description suitable for a resale listing. Use ONLY the facts given below — do not invent features, condition, ownership history, or service records that aren't stated. Neutral tone, no marketing hype.",
-    "3. List 3-4 well-known strengths or selling points of this MAKE and MODEL, drawn from general knowledge of the model — what this car is genuinely known for in the market: e.g. class-leading fuel efficiency, low running/maintenance cost, brand reliability and easy resale, compact and city-friendly, spacious/practical cabin, strong 4x4 or highway performance, good safety rating, a great first car, etc. Do NOT restate the facts above (odometer, owner count, listed accessories) — these should be model-level qualities, not details of this specific unit. One short phrase each. Only claim strengths this model actually has; no invented specifications or numbers.",
+    "3. List 3-4 selling points of this MAKE, MODEL and VARIANT drawn from general knowledge of the model — anything genuinely notable that adds resale appeal. This is open-ended: it could be efficiency, running cost, reliability, resale value, ride/handling, space/practicality, off-road ability, safety rating, engine/performance (power, torque, 0-100, a well-regarded engine), rarity or collectibility (a discontinued model, a limited variant, an enthusiast favourite), a segment-first or standout feature, tuning/modding potential, or brand reputation — whichever actually apply to THIS model. You may cite the model's real, widely-known specs (e.g. a known engine or power figure for this variant) but never guess or invent numbers. Do NOT restate the listing facts above (odometer, owner count, listed accessories) — these are model-level qualities, not details of this specific unit. One short phrase each.",
     "",
     "Vehicle facts:",
     factLines,
