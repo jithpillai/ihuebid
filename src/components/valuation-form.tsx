@@ -45,7 +45,20 @@ export function ValuationForm({
   const hint = useMemo(() => positionalHint(value, min, max), [value, min, max]);
   const [hasResponded, setHasResponded] = useState(initialValue !== null);
   const [name, setName] = useState(initialName ?? "");
-  const [anonymous, setAnonymous] = useState(initialAnonymous);
+  // Anonymous by default; a name unchecks it. Checked when there's no name to
+  // attach, or the participant previously chose anonymous.
+  const [anonymous, setAnonymous] = useState(!(initialName ?? "").trim() || initialAnonymous);
+
+  // Typing a name unchecks "anonymous"; clearing it re-checks. Only fires on
+  // the empty↔non-empty edge, so editing an existing name (or manually
+  // re-checking anonymous while keeping the name) is respected.
+  function handleNameChange(next: string) {
+    const wasEmpty = name.trim() === "";
+    const isEmpty = next.trim() === "";
+    setName(next);
+    if (wasEmpty && !isEmpty) setAnonymous(false);
+    else if (!wasEmpty && isEmpty) setAnonymous(true);
+  }
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -121,12 +134,11 @@ export function ValuationForm({
         <input
           type="text"
           value={name}
-          onChange={(event) => setName(event.target.value)}
+          onChange={(event) => handleNameChange(event.target.value)}
           disabled={busy}
           maxLength={80}
           placeholder="Your name (optional)"
-          className="w-full rounded-2xl border border-border-strong bg-surface px-4 py-2.5 text-sm text-fg outline-none placeholder:text-subtle-fg focus:border-accent disabled:opacity-60 aria-[disabled=true]:opacity-50"
-          aria-disabled={anonymous}
+          className="w-full rounded-2xl border border-border-strong bg-surface px-4 py-2.5 text-sm text-fg outline-none placeholder:text-subtle-fg focus:border-accent disabled:opacity-60"
         />
         <label className="mt-2 flex items-center gap-2 text-xs font-semibold text-muted-fg">
           <input
