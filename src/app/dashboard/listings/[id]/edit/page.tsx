@@ -5,6 +5,7 @@ import { AggregateResultPanel } from "@/components/aggregate-result-panel";
 import { CloseListingForm } from "@/components/close-listing-form";
 import { ListingEmbedForm } from "@/components/listing-embed-form";
 import { ListingGalleryUploader } from "@/components/listing-gallery-uploader";
+import { ListingForm } from "@/components/listing-form";
 import { ListingReferenceLinks } from "@/components/listing-reference-links";
 import { PendingLink } from "@/components/pending-link";
 import { PublishListingButton } from "@/components/publish-listing-button";
@@ -44,6 +45,20 @@ export default async function EditListingPage({ params }: Props) {
   const dateFormatter = new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "numeric" });
 
   const isPublished = listing.status === "LIVE" || listing.status === "PAUSED" || listing.status === "CLOSED";
+  const hasResponses = (aggregate?.all.count ?? 0) > 0;
+  const listingFormInitial = {
+    title: listing.title,
+    description: listing.description ?? "",
+    locationText: listing.locationText ?? "",
+    currency: listing.currency,
+    ownerExpectedPrice: listing.ownerExpectedPrice != null ? String(Number(listing.ownerExpectedPrice)) : "",
+    ownerPriceVisibility: listing.ownerPriceVisibility,
+    resultVisibility: listing.resultVisibility,
+    responseMin: String(Number(listing.responseMin)),
+    responseMax: String(Number(listing.responseMax)),
+    responseIncrement: String(Number(listing.responseIncrement)),
+    fieldValues: Object.fromEntries(listing.fieldValues.map((field) => [field.fieldKey, field.fieldValue])),
+  };
   const profile = session.user.profile;
   const shareMessage = isPublished && handle
     ? buildListingShareMessage({
@@ -78,6 +93,14 @@ export default async function EditListingPage({ params }: Props) {
           View public listing →
         </PendingLink>
       )}
+
+      <div className="mt-8">
+        <h2 className="text-sm font-black uppercase tracking-wide text-subtle-fg">Listing details</h2>
+        <p className="mt-1 text-sm text-muted-fg">Fix mistakes in the vehicle facts, title, description, or pricing.</p>
+        <div className="mt-4">
+          <ListingForm mode="edit" listingId={listing.id} hasResponses={hasResponses} initial={listingFormInitial} />
+        </div>
+      </div>
 
       {shareMessage && (
         <div className="mt-8 rounded-3xl border border-border bg-surface p-7 shadow-sm">

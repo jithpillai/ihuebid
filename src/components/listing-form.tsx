@@ -1,31 +1,74 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 
 import { ListingFieldInputs } from "@/components/listing-field-inputs";
 import { PendingOverlay } from "@/components/pending-feedback";
 import { hasSufficientFactsForSuggestion } from "@/server/ai/price-suggestion";
 import { suggestListingDescription, suggestListingTitle } from "@/server/listings/templates/used-vehicle";
 
-export function CreateListingForm() {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [locationText, setLocationText] = useState("");
-  const [currency, setCurrency] = useState("INR");
-  const [ownerExpectedPrice, setOwnerExpectedPrice] = useState("");
-  const [ownerPriceVisibility, setOwnerPriceVisibility] = useState<"VISIBLE" | "HIDDEN_UNTIL_RESPONSE" | "NOT_SUPPLIED">("NOT_SUPPLIED");
-  const [resultVisibility, setResultVisibility] = useState<"PUBLIC" | "CREATOR_ONLY">("PUBLIC");
-  const [responseMin, setResponseMin] = useState("");
-  const [responseMax, setResponseMax] = useState("");
-  const [responseIncrement, setResponseIncrement] = useState("1000");
-  const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
+type OwnerPriceVisibility = "VISIBLE" | "HIDDEN_UNTIL_RESPONSE" | "NOT_SUPPLIED";
+type ResultVisibility = "PUBLIC" | "CREATOR_ONLY";
+
+export type ListingFormInitial = {
+  title: string;
+  description: string;
+  locationText: string;
+  currency: string;
+  ownerExpectedPrice: string;
+  ownerPriceVisibility: OwnerPriceVisibility;
+  resultVisibility: ResultVisibility;
+  responseMin: string;
+  responseMax: string;
+  responseIncrement: string;
+  fieldValues: Record<string, string>;
+};
+
+type Props =
+  | { mode: "create" }
+  | { mode: "edit"; listingId: string; hasResponses: boolean; initial: ListingFormInitial };
+
+const CREATE_DEFAULTS: ListingFormInitial = {
+  title: "",
+  description: "",
+  locationText: "",
+  currency: "INR",
+  ownerExpectedPrice: "",
+  ownerPriceVisibility: "NOT_SUPPLIED",
+  resultVisibility: "PUBLIC",
+  responseMin: "",
+  responseMax: "",
+  responseIncrement: "1000",
+  fieldValues: {},
+};
+
+export function ListingForm(props: Props) {
+  const initial = props.mode === "edit" ? props.initial : CREATE_DEFAULTS;
+  const isEdit = props.mode === "edit";
+
+  const router = useRouter();
+  const [title, setTitle] = useState(initial.title);
+  const [description, setDescription] = useState(initial.description);
+  const [locationText, setLocationText] = useState(initial.locationText);
+  const [currency, setCurrency] = useState(initial.currency);
+  const [ownerExpectedPrice, setOwnerExpectedPrice] = useState(initial.ownerExpectedPrice);
+  const [ownerPriceVisibility, setOwnerPriceVisibility] = useState<OwnerPriceVisibility>(initial.ownerPriceVisibility);
+  const [resultVisibility, setResultVisibility] = useState<ResultVisibility>(initial.resultVisibility);
+  const [responseMin, setResponseMin] = useState(initial.responseMin);
+  const [responseMax, setResponseMax] = useState(initial.responseMax);
+  const [responseIncrement, setResponseIncrement] = useState(initial.responseIncrement);
+  const [fieldValues, setFieldValues] = useState<Record<string, string>>(initial.fieldValues);
   const [error, setError] = useState("");
+  const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   const [suggestion, setSuggestion] = useState<{ low: number; high: number; rationale: string; description: string } | null>(null);
   const [suggestError, setSuggestError] = useState("");
   const [suggesting, setSuggesting] = useState(false);
   const canSuggest = hasSufficientFactsForSuggestion(fieldValues);
+  const busy = loading || isPending;
 
   // Offered as an "Apply" suggestion, never auto-filled — and only while the
   // field is still empty, so editing the details later can't overwrite what
@@ -67,38 +110,60 @@ export function CreateListingForm() {
   async function submit(event: FormEvent) {
     event.preventDefault();
     setError("");
+    setSaved(false);
     setLoading(true);
+    const payload = {
+      title,
+      description,
+      locationText,
+      currency,
+      ownerExpectedPrice: ownerExpectedPrice ? Number(ownerExpectedPrice) : undefined,
+      ownerPriceVisibility,
+      resultVisibility,
+      responseMin: Number(responseMin),
+      responseMax: Number(responseMax),
+      responseIncrement: Number(responseIncrement),
+      fieldValues,
+    };
     try {
-      const response = await fetch("/api/listings", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          title,
-          description,
-          locationText,
-          currency,
-          ownerExpectedPrice: ownerExpectedPrice ? Number(ownerExpectedPrice) : undefined,
-          ownerPriceVisibility,
-          resultVisibility,
-          responseMin: Number(responseMin),
-          responseMax: Number(responseMax),
-          responseIncrement: Number(responseIncrement),
-          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-          fieldValues,
-        }),
-      });
-      const result = await response.json() as { ok: boolean; message?: string; listing?: { id: string } };
-      if (!response.ok || !result.ok || !result.listing) throw new Error(result.message ?? "Unable to create this listing.");
-      window.location.assign(`/dashboard/listings/${result.listing.id}/edit`);
+      if (props.mode === "edit") {
+        const response = await fetch(`/api/listings/${props.listingId}`, {
+          method: "PATCH",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const result = await response.json() as { ok: boolean; message?: string };
+        if (!response.ok || !result.ok) throw new Error(result.message ?? "Unable to save your changes.");
+        setSaved(true);
+        startTransition(() => router.refresh());
+      } else {
+        const response = await fetch("/api/listings", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ ...payload, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }),
+        });
+        const result = await response.json() as { ok: boolean; message?: string; listing?: { id: string } };
+        if (!response.ok || !result.ok || !result.listing) throw new Error(result.message ?? "Unable to create this listing.");
+        window.location.assign(`/dashboard/listings/${result.listing.id}/edit`);
+        return;
+      }
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Unable to create this listing.");
+      setError(submitError instanceof Error ? submitError.message : "Something went wrong.");
+    } finally {
       setLoading(false);
     }
   }
 
   return (
-    <form onSubmit={submit} className="relative mt-8 space-y-6 rounded-3xl border border-border bg-surface p-7 shadow-xl shadow-black/5 dark:shadow-black/40">
-      <PendingOverlay show={loading} label="Creating…" />
+    <form onSubmit={submit} className="relative space-y-6 rounded-3xl border border-border bg-surface p-7 shadow-xl shadow-black/5 dark:shadow-black/40">
+      <PendingOverlay show={busy} label={isEdit ? "Saving…" : "Creating…"} />
+
+      {isEdit && props.hasResponses && (
+        <p className="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm font-semibold text-amber-700 dark:text-amber-300">
+          This listing already has responses. The market signal was calculated from what those participants saw —
+          changing the vehicle details, price, or response range now can make it misleading. Fix genuine mistakes only.
+        </p>
+      )}
 
       <div>
         <h2 className="text-sm font-black uppercase tracking-wide text-subtle-fg">Vehicle details</h2>
@@ -135,7 +200,7 @@ export function CreateListingForm() {
             Owner price visibility
             <select
               value={ownerPriceVisibility}
-              onChange={(event) => setOwnerPriceVisibility(event.target.value as typeof ownerPriceVisibility)}
+              onChange={(event) => setOwnerPriceVisibility(event.target.value as OwnerPriceVisibility)}
               className="mt-2 w-full rounded-2xl border border-border-strong bg-surface px-4 py-3 text-fg outline-none focus:border-accent"
             >
               <option value="NOT_SUPPLIED">Don&rsquo;t show — not supplied</option>
@@ -147,7 +212,7 @@ export function CreateListingForm() {
             Audience results visibility
             <select
               value={resultVisibility}
-              onChange={(event) => setResultVisibility(event.target.value as typeof resultVisibility)}
+              onChange={(event) => setResultVisibility(event.target.value as ResultVisibility)}
               className="mt-2 w-full rounded-2xl border border-border-strong bg-surface px-4 py-3 text-fg outline-none focus:border-accent"
             >
               <option value="PUBLIC">Show consensus, range &amp; confidence to everyone</option>
@@ -294,10 +359,11 @@ export function CreateListingForm() {
       </div>
 
       {error && <p role="alert" className="text-sm font-semibold text-red-600">{error}</p>}
-      <button disabled={loading} type="submit" className="w-full rounded-2xl bg-accent px-5 py-3.5 text-sm font-black text-accent-fg transition hover:brightness-110 disabled:cursor-wait disabled:opacity-60">
-        {loading ? "Creating…" : "Create draft"}
+      {saved && !error && <p className="text-sm font-semibold text-accent-soft-fg">Changes saved.</p>}
+      <button disabled={busy} type="submit" className="w-full rounded-2xl bg-accent px-5 py-3.5 text-sm font-black text-accent-fg transition hover:brightness-110 disabled:cursor-wait disabled:opacity-60">
+        {isEdit ? (busy ? "Saving…" : "Save changes") : (busy ? "Creating…" : "Create draft")}
       </button>
-      <p className="text-center text-xs text-subtle-fg">You&rsquo;ll add photos and publish on the next screen.</p>
+      {!isEdit && <p className="text-center text-xs text-subtle-fg">You&rsquo;ll add photos and publish on the next screen.</p>}
     </form>
   );
 }

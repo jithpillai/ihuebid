@@ -167,10 +167,14 @@ export async function listRecentPublicListings(limit = 6) {
 
 export type UpdateListingInput = Partial<Omit<CreateListingInput, "category">>;
 
+// Editable at any status. A published listing's responses were given against
+// whatever the participants saw, so the market signal can become misleading
+// after an edit — the edit UI warns about that; the service trusts the
+// creator. `publicId` (and therefore the public URL) never changes here.
 export async function updateListing(session: SessionShape, listingId: string, input: UpdateListingInput) {
   const listing = await getListingForOwner(listingId, session);
-  if (listing.status !== "DRAFT") {
-    throw new AuthError("LISTING_NOT_EDITABLE", "Only draft listings can be edited in this way.");
+  if (listing.status === "CANCELLED") {
+    throw new AuthError("LISTING_NOT_EDITABLE", "This listing has been cancelled.");
   }
 
   const merged = {
@@ -194,6 +198,7 @@ export async function updateListing(session: SessionShape, listingId: string, in
         currency: merged.currency,
         ownerExpectedPrice: input.ownerExpectedPrice !== undefined ? input.ownerExpectedPrice : undefined,
         ownerPriceVisibility: input.ownerPriceVisibility,
+        resultVisibility: input.resultVisibility,
         responseMin: merged.responseMin,
         responseMax: merged.responseMax,
         responseIncrement: merged.responseIncrement,
