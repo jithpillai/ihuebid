@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { AvatarUploader } from "@/components/avatar-uploader";
+import { BannerUploader } from "@/components/banner-uploader";
 import { DisplayNameForm } from "@/components/display-name-form";
 import { HandleForm } from "@/components/handle-form";
 import { ProfileDetailsForm } from "@/components/profile-details-form";
@@ -17,6 +18,9 @@ export default async function AccountSettingsPage() {
 
   const avatarUrl = session.user.profile?.avatarPublicId
     ? cloudinaryImageUrl({ publicId: session.user.profile.avatarPublicId, deliveryType: "authenticated" })
+    : null;
+  const bannerUrl = session.user.profile?.bannerPublicId
+    ? cloudinaryImageUrl({ publicId: session.user.profile.bannerPublicId })
     : null;
 
   return (
@@ -41,6 +45,14 @@ export default async function AccountSettingsPage() {
         <h2 className="text-lg font-black text-fg">Profile photo</h2>
         <div className="mt-4">
           <AvatarUploader initialImageUrl={avatarUrl} />
+        </div>
+      </div>
+
+      <div className="mt-6 rounded-3xl border border-border bg-surface p-7 shadow-sm">
+        <h2 className="text-lg font-black text-fg">Profile banner</h2>
+        <p className="mt-1 text-sm text-muted-fg">The wide image across the top of your public profile page.</p>
+        <div className="mt-4">
+          <BannerUploader initialImageUrl={bannerUrl} />
         </div>
       </div>
 

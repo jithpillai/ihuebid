@@ -14,6 +14,9 @@ export type PriceSuggestion = {
   // call. Empty string if the model returned nothing usable — the form then
   // falls back to its deterministic description suggestion.
   description: string;
+  // 3-4 short buyer-facing standout points, grounded in the facts. Folded
+  // into the description as a bullet list when the creator applies the draft.
+  highlights: string[];
 };
 
 const RESPONSE_SCHEMA = {
@@ -23,12 +26,15 @@ const RESPONSE_SCHEMA = {
     high: { type: "number" },
     rationale: { type: "string" },
     description: { type: "string" },
+    highlights: { type: "array", items: { type: "string" } },
   },
-  required: ["low", "high", "rationale", "description"],
+  required: ["low", "high", "rationale", "description", "highlights"],
 };
 
 const MAX_RATIONALE_LENGTH = 500;
 const MAX_DESCRIPTION_LENGTH = 1200;
+const MAX_HIGHLIGHT_LENGTH = 120;
+const MAX_HIGHLIGHTS = 4;
 
 // Gemini's structured-output mode can't refuse to answer — given zero facts
 // it would still return a confident-looking number, indistinguishable from a
@@ -62,12 +68,13 @@ export function buildPriceSuggestionPrompt(input: PriceSuggestionInput): { promp
     "Given the following vehicle facts, do two things for this exact vehicle:",
     "1. Suggest a realistic resale price range in the current Indian used-vehicle market. Be conservative and realistic — this is a rough starting-point estimate for a seller, not verified market data.",
     "2. Write a clear, factual 2-4 sentence description suitable for a resale listing. Use ONLY the facts given below — do not invent features, condition, ownership history, or service records that aren't stated. Neutral tone, no marketing hype.",
+    "3. List 3-4 short standout points a buyer would care about (e.g. performance, running cost / fuel efficiency, reliability, rarity, notable features, ownership/condition) — whichever the facts actually support. One short line each, grounded ONLY in the facts given, no invented claims.",
     "",
     "Vehicle facts:",
     factLines,
     locationLine,
     "",
-    `Respond with: a price range in ${input.currency} (numeric values only, no currency symbols or separators), a one-sentence rationale for the range, and the description.`,
+    `Respond with: a price range in ${input.currency} (numeric values only, no currency symbols or separators), a one-sentence rationale for the range, the description, and the highlights array.`,
   ].filter(Boolean).join("\n");
 
   return { prompt, responseSchema: RESPONSE_SCHEMA };
@@ -92,6 +99,13 @@ export function normalizePriceSuggestion(raw: unknown): PriceSuggestion {
   const description = typeof data.description === "string" && data.description.trim()
     ? data.description.replace(/\s+/g, " ").trim().slice(0, MAX_DESCRIPTION_LENGTH)
     : "";
+  const highlights = Array.isArray(data.highlights)
+    ? data.highlights
+        .filter((item): item is string => typeof item === "string")
+        .map((item) => item.replace(/\s+/g, " ").trim().replace(/^[-•*]\s*/, "").slice(0, MAX_HIGHLIGHT_LENGTH))
+        .filter(Boolean)
+        .slice(0, MAX_HIGHLIGHTS)
+    : [];
 
-  return { low, high, rationale, description };
+  return { low, high, rationale, description, highlights };
 }

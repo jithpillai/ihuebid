@@ -122,6 +122,7 @@ model UserProfile {
   links              Json?
   verificationStatus VerificationStatus  @default(NONE) @map("verification_status")
   avatarPublicId     String?             @map("avatar_public_id") @db.VarChar(400)
+  bannerPublicId     String?             @map("banner_public_id") @db.VarChar(400)
   createdAt          DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt          DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
 

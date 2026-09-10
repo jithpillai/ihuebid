@@ -4,13 +4,26 @@ import { buildPriceSuggestionPrompt, hasSufficientFactsForSuggestion, normalizeP
 
 describe("normalizePriceSuggestion", () => {
   it("passes through a well-formed suggestion", () => {
-    expect(normalizePriceSuggestion({ low: 400000, high: 500000, rationale: "Typical for this model and mileage.", description: "A 2021 Honda City." }))
-      .toEqual({ low: 400000, high: 500000, rationale: "Typical for this model and mileage.", description: "A 2021 Honda City." });
+    expect(normalizePriceSuggestion({
+      low: 400000, high: 500000, rationale: "Typical for this model and mileage.",
+      description: "A 2021 Honda City.", highlights: ["Frugal petrol engine", "Single owner"],
+    })).toEqual({
+      low: 400000, high: 500000, rationale: "Typical for this model and mileage.",
+      description: "A 2021 Honda City.", highlights: ["Frugal petrol engine", "Single owner"],
+    });
   });
 
   it("swaps low/high if the AI returned them reversed", () => {
     expect(normalizePriceSuggestion({ low: 500000, high: 400000, rationale: "x", description: "y" }))
-      .toEqual({ low: 400000, high: 500000, rationale: "x", description: "y" });
+      .toEqual({ low: 400000, high: 500000, rationale: "x", description: "y", highlights: [] });
+  });
+
+  it("cleans highlights: strips bullets, trims, drops empties, keeps 4", () => {
+    const result = normalizePriceSuggestion({
+      low: 400000, high: 500000, rationale: "x", description: "y",
+      highlights: ["- Great mileage  ", "• Low running cost", "", "Rare variant", "Well kept", "Fifth point"],
+    });
+    expect(result.highlights).toEqual(["Great mileage", "Low running cost", "Rare variant", "Well kept"]);
   });
 
   it("falls back to a generic rationale when missing", () => {
@@ -66,10 +79,11 @@ describe("buildPriceSuggestionPrompt", () => {
     expect(prompt).not.toContain("SOME-SENSITIVE-VIN");
   });
 
-  it("asks for both a price range and a description", () => {
+  it("asks for a price range, a description, and standout points", () => {
     const { prompt } = buildPriceSuggestionPrompt({ currency: "INR", fieldValues: { make: "Honda", model: "City", modelYear: "2020" } });
     expect(prompt.toLowerCase()).toContain("price range");
     expect(prompt.toLowerCase()).toContain("description");
+    expect(prompt.toLowerCase()).toContain("standout points");
   });
 
   it("omits fields that weren't filled in", () => {

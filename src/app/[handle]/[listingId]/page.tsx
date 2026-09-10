@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const listing = await loadListing(handle, listingId);
   if (!listing) return { title: "Listing not found" };
   const cover = listing.mediaAssets[0];
-  const description = listing.description ?? `What is a fair price for this ${listing.title}?`;
+  const description = listing.description ?? `Check out this ${listing.title} on ihue Bid.`;
   const ogImage = cover ? cloudinaryOgImageUrl({ publicId: cover.publicId }) : undefined;
   const url = `${appUrl()}/${handle}/${listing.publicId}`;
   return {

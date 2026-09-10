@@ -85,9 +85,9 @@ export function ShareButton({
   label?: string;
 }) {
   const [copied, setCopied] = useState(false);
-  // When a full `text` is given it already carries its own link; otherwise
-  // build a minimal "title + link" body.
-  const body = text?.trim() ? text.trim() : `${title}\n\n${url}`;
+  const hasBody = Boolean(text?.trim());
+  // A full `text` already carries its own link; otherwise build "title + link".
+  const body = hasBody ? text!.trim() : `${title}\n\n${url}`;
 
   async function onClick(event: React.MouseEvent) {
     event.preventDefault();
@@ -95,7 +95,9 @@ export function ShareButton({
 
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
-        await navigator.share({ title, text: body, url });
+        // Never pass both `text` and `url` — some share targets concatenate
+        // them and the link then appears twice in the message.
+        await navigator.share(hasBody ? { title, text: body } : { title, url });
         return;
       } catch {
         // dismissed or unsupported payload — fall through

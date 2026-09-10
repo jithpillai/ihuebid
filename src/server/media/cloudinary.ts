@@ -14,19 +14,28 @@ export function cloudinaryConfig() {
   return { cloudinary, cloudName, apiKey, apiSecret, folderPrefix };
 }
 
-// A 1200x630 crop for OpenGraph / Twitter cards — the size link-preview
-// crawlers (WhatsApp, Telegram, Slack, X) expect for a large image card.
-// Public `upload` delivery only; never used for `authenticated` assets.
-export function cloudinaryOgImageUrl(asset: { publicId: string }): string {
+// A fixed-aspect `c_fill` crop of a public (`upload`) asset. Used for OG cards
+// and the profile banner. Never for `authenticated` assets.
+export function cloudinaryFillUrl(publicId: string, width: number, height: number): string {
   const { cloudinary } = cloudinaryConfig();
-  return cloudinary.url(asset.publicId, {
+  return cloudinary.url(publicId, {
     secure: true,
     type: "upload",
     transformation: [
-      { width: 1200, height: 630, crop: "fill", gravity: "auto" },
+      { width, height, crop: "fill", gravity: "auto" },
       { fetch_format: "jpg", quality: "auto" },
     ],
   });
+}
+
+// 1200x630 for OpenGraph / Twitter cards (WhatsApp, Telegram, Slack, X).
+export function cloudinaryOgImageUrl(asset: { publicId: string }): string {
+  return cloudinaryFillUrl(asset.publicId, 1200, 630);
+}
+
+// Wide crop for the creator's public-profile banner.
+export function cloudinaryBannerUrl(publicId: string): string {
+  return cloudinaryFillUrl(publicId, 1920, 480);
 }
 
 export function cloudinaryImageUrl(asset: { publicId: string; version?: number; format?: string; deliveryType?: string }, transformation = "f_auto,q_auto") {

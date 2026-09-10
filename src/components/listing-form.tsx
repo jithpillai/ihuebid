@@ -64,7 +64,7 @@ export function ListingForm(props: Props) {
   const [loading, setLoading] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  const [suggestion, setSuggestion] = useState<{ low: number; high: number; rationale: string; description: string } | null>(null);
+  const [suggestion, setSuggestion] = useState<{ low: number; high: number; rationale: string; description: string; highlights: string[] } | null>(null);
   const [suggestError, setSuggestError] = useState("");
   const [suggesting, setSuggesting] = useState(false);
   const canSuggest = hasSufficientFactsForSuggestion(fieldValues);
@@ -76,10 +76,17 @@ export function ListingForm(props: Props) {
   // (from the "Suggest range & description" call) and falls back to a
   // deterministic one built from the structured facts.
   const titleSuggestion = title.trim() === "" ? suggestListingTitle(fieldValues) : "";
-  const descriptionSuggestion = description.trim() === ""
-    ? (suggestion?.description || suggestListingDescription(fieldValues))
+  // AI draft = the prose description followed by a "• " highlight block.
+  const aiDescriptionDraft = suggestion
+    ? [
+        suggestion.description,
+        suggestion.highlights.length > 0 ? suggestion.highlights.map((h) => `• ${h}`).join("\n") : "",
+      ].filter(Boolean).join("\n\n")
     : "";
-  const descriptionFromAi = descriptionSuggestion !== "" && descriptionSuggestion === suggestion?.description;
+  const descriptionSuggestion = description.trim() === ""
+    ? (aiDescriptionDraft || suggestListingDescription(fieldValues))
+    : "";
+  const descriptionFromAi = descriptionSuggestion !== "" && descriptionSuggestion === aiDescriptionDraft;
 
   async function suggestRange() {
     setSuggestError("");
@@ -91,7 +98,7 @@ export function ListingForm(props: Props) {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ currency, locationText, fieldValues }),
       });
-      const result = await response.json() as { ok: boolean; message?: string; suggestion?: { low: number; high: number; rationale: string; description: string } };
+      const result = await response.json() as { ok: boolean; message?: string; suggestion?: { low: number; high: number; rationale: string; description: string; highlights: string[] } };
       if (!response.ok || !result.ok || !result.suggestion) throw new Error(result.message ?? "Unable to suggest right now.");
       setSuggestion(result.suggestion);
     } catch (suggestErr) {

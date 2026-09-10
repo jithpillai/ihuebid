@@ -23,10 +23,10 @@ type CompleteResponse = {
 };
 
 // Sign -> direct-to-Cloudinary upload -> server-verified complete. Shared by
-// the avatar uploader (purpose USER_AVATAR) and the listing gallery uploader
-// (purpose LISTING_IMAGE, listingId required).
+// the avatar/banner uploaders (USER_AVATAR / USER_BANNER) and the listing
+// gallery uploader (LISTING_IMAGE, listingId required).
 export async function uploadImage(
-  purpose: "USER_AVATAR" | "LISTING_IMAGE",
+  purpose: "USER_AVATAR" | "USER_BANNER" | "LISTING_IMAGE",
   file: File,
   listingId?: string,
 ): Promise<{ secureUrl: string; publicId: string; assetId?: string }> {

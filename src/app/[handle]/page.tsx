@@ -9,7 +9,7 @@ import { Pill } from "@/components/ui/pill";
 import { Stat, StatRow } from "@/components/ui/stat";
 import { getPublicProfileByHandle, normalizeProfileLinks, toWhatsAppDigits } from "@/server/account/profile-service";
 import { listPublicListingsForHandleWithStats } from "@/server/listings/listing-service";
-import { cloudinaryImageUrl, cloudinaryOgImageUrl } from "@/server/media/cloudinary";
+import { cloudinaryBannerUrl, cloudinaryImageUrl, cloudinaryOgImageUrl } from "@/server/media/cloudinary";
 
 type Props = { params: Promise<{ handle: string }> };
 
@@ -23,7 +23,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const url = `${appUrl()}/${profile.handle}`;
   const firstCover = await listPublicListingsForHandleWithStats(profile.userId)
     .then((rows) => rows[0]?.mediaAssets[0]?.publicId);
-  const ogImage = firstCover ? cloudinaryOgImageUrl({ publicId: firstCover }) : undefined;
+  const ogSourceId = profile.bannerPublicId ?? firstCover;
+  const ogImage = ogSourceId ? cloudinaryOgImageUrl({ publicId: ogSourceId }) : undefined;
   return {
     title: profile.user.displayName,
     description,
@@ -72,10 +73,21 @@ export default async function CreatorProfilePage({ params }: Props) {
     <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8">
       {/* Banner */}
       <div className="relative -mx-4 h-40 overflow-hidden border-b border-border sm:-mx-6 sm:h-48 lg:-mx-8">
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 [background:radial-gradient(60%_120%_at_20%_0%,color-mix(in_oklab,var(--accent)_28%,transparent),transparent),linear-gradient(120deg,color-mix(in_oklab,var(--accent)_12%,transparent),transparent)]"
-        />
+        {profile.bannerPublicId ? (
+          <Image
+            src={cloudinaryBannerUrl(profile.bannerPublicId)}
+            alt=""
+            fill
+            sizes="100vw"
+            priority
+            className="object-cover"
+          />
+        ) : (
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 [background:radial-gradient(60%_120%_at_20%_0%,color-mix(in_oklab,var(--accent)_28%,transparent),transparent),linear-gradient(120deg,color-mix(in_oklab,var(--accent)_12%,transparent),transparent)]"
+          />
+        )}
       </div>
 
       <div className="relative -mt-12 flex flex-col gap-4 sm:-mt-14 sm:flex-row sm:items-end">

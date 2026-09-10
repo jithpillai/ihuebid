@@ -111,12 +111,19 @@ export async function getListingForOwner(listingId: string, session: SessionShap
   return listing;
 }
 
+// Finished listings sink below active ones; newest-first within each group
+// (Array.prototype.sort is stable). Applied on top of the DB createdAt order.
+function inactiveLast(status: string): number {
+  return status === "CLOSED" || status === "CANCELLED" ? 1 : 0;
+}
+
 export async function listListingsForCreator(creatorId: string) {
-  return db.listing.findMany({
+  const listings = await db.listing.findMany({
     where: { creatorId },
     orderBy: { createdAt: "desc" },
     include: { mediaAssets: { orderBy: { sortOrder: "asc" }, take: 1 }, fieldValues: true },
   });
+  return listings.sort((a, b) => inactiveLast(a.status) - inactiveLast(b.status));
 }
 
 // Count of valuations per listing — same ANONYMOUS_VALUATION filter that
@@ -138,11 +145,12 @@ export async function listListingsForCreatorWithStats(creatorId: string) {
 }
 
 export async function listPublicListingsForHandle(userId: string) {
-  return db.listing.findMany({
+  const listings = await db.listing.findMany({
     where: { creatorId: userId, status: { in: ["LIVE", "PAUSED", "CLOSED"] } },
     orderBy: { createdAt: "desc" },
     include: { mediaAssets: { orderBy: { sortOrder: "asc" }, take: 1 } },
   });
+  return listings.sort((a, b) => inactiveLast(a.status) - inactiveLast(b.status));
 }
 
 export async function listPublicListingsForHandleWithStats(userId: string) {
