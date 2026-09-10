@@ -22,16 +22,21 @@ export function CreateListingForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const [suggestion, setSuggestion] = useState<{ low: number; high: number; rationale: string } | null>(null);
+  const [suggestion, setSuggestion] = useState<{ low: number; high: number; rationale: string; description: string } | null>(null);
   const [suggestError, setSuggestError] = useState("");
   const [suggesting, setSuggesting] = useState(false);
   const canSuggest = hasSufficientFactsForSuggestion(fieldValues);
 
   // Offered as an "Apply" suggestion, never auto-filled — and only while the
   // field is still empty, so editing the details later can't overwrite what
-  // the creator has already typed.
+  // the creator has already typed. The description prefers Gemini's version
+  // (from the "Suggest range & description" call) and falls back to a
+  // deterministic one built from the structured facts.
   const titleSuggestion = title.trim() === "" ? suggestListingTitle(fieldValues) : "";
-  const descriptionSuggestion = description.trim() === "" ? suggestListingDescription(fieldValues) : "";
+  const descriptionSuggestion = description.trim() === ""
+    ? (suggestion?.description || suggestListingDescription(fieldValues))
+    : "";
+  const descriptionFromAi = descriptionSuggestion !== "" && descriptionSuggestion === suggestion?.description;
 
   async function suggestRange() {
     setSuggestError("");
@@ -43,11 +48,11 @@ export function CreateListingForm() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ currency, locationText, fieldValues }),
       });
-      const result = await response.json() as { ok: boolean; message?: string; suggestion?: { low: number; high: number; rationale: string } };
-      if (!response.ok || !result.ok || !result.suggestion) throw new Error(result.message ?? "Unable to suggest a range right now.");
+      const result = await response.json() as { ok: boolean; message?: string; suggestion?: { low: number; high: number; rationale: string; description: string } };
+      if (!response.ok || !result.ok || !result.suggestion) throw new Error(result.message ?? "Unable to suggest right now.");
       setSuggestion(result.suggestion);
     } catch (suggestErr) {
-      setSuggestError(suggestErr instanceof Error ? suggestErr.message : "Unable to suggest a range right now.");
+      setSuggestError(suggestErr instanceof Error ? suggestErr.message : "Unable to suggest right now.");
     } finally {
       setSuggesting(false);
     }
@@ -99,72 +104,6 @@ export function CreateListingForm() {
         <h2 className="text-sm font-black uppercase tracking-wide text-subtle-fg">Vehicle details</h2>
         <div className="mt-4">
           <ListingFieldInputs values={fieldValues} onChange={(key, value) => setFieldValues((prev) => ({ ...prev, [key]: value }))} />
-        </div>
-      </div>
-
-      <div>
-        <h2 className="text-sm font-black uppercase tracking-wide text-subtle-fg">Listing basics</h2>
-        <p className="mt-1 text-xs text-subtle-fg">Built from the vehicle details above — tweak anything you like.</p>
-        <div className="mt-4 space-y-4">
-          <label className="block text-sm font-semibold text-body">
-            Title
-            <input
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              required
-              maxLength={200}
-              placeholder="e.g. 2021 Toyota Fortuner, Automatic"
-              className="mt-2 w-full rounded-2xl border border-border-strong bg-surface px-4 py-3 text-fg outline-none placeholder:text-subtle-fg focus:border-accent"
-            />
-            {titleSuggestion && (
-              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-accent-soft-fg/30 bg-accent-soft px-3 py-2">
-                <span className="text-xs text-muted-fg">
-                  Suggested: <span className="font-semibold text-fg">{titleSuggestion}</span>
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setTitle(titleSuggestion)}
-                  className="rounded-lg bg-accent px-2.5 py-1 text-xs font-bold text-accent-fg transition hover:brightness-110"
-                >
-                  Apply
-                </button>
-              </div>
-            )}
-          </label>
-          <label className="block text-sm font-semibold text-body">
-            Description <span className="font-normal text-subtle-fg">(optional)</span>
-            <textarea
-              value={description}
-              onChange={(event) => setDescription(event.target.value)}
-              rows={4}
-              maxLength={4000}
-              className="mt-2 w-full resize-none rounded-2xl border border-border-strong bg-surface px-4 py-3 text-fg outline-none focus:border-accent"
-            />
-            {descriptionSuggestion && (
-              <div className="mt-2 rounded-xl border border-accent-soft-fg/30 bg-accent-soft px-3 py-2">
-                <p className="text-xs text-muted-fg">
-                  Suggested: <span className="font-semibold text-fg">{descriptionSuggestion}</span>
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setDescription(descriptionSuggestion)}
-                  className="mt-2 rounded-lg bg-accent px-2.5 py-1 text-xs font-bold text-accent-fg transition hover:brightness-110"
-                >
-                  Apply
-                </button>
-              </div>
-            )}
-          </label>
-          <label className="block text-sm font-semibold text-body">
-            Location <span className="font-normal text-subtle-fg">(optional)</span>
-            <input
-              value={locationText}
-              onChange={(event) => setLocationText(event.target.value)}
-              maxLength={300}
-              placeholder="e.g. Bengaluru, Karnataka"
-              className="mt-2 w-full rounded-2xl border border-border-strong bg-surface px-4 py-3 text-fg outline-none placeholder:text-subtle-fg focus:border-accent"
-            />
-          </label>
         </div>
       </div>
 
@@ -222,9 +161,13 @@ export function CreateListingForm() {
               disabled={!canSuggest || suggesting}
               className="rounded-2xl border border-accent-soft-fg/30 bg-accent-soft px-4 py-2.5 text-sm font-bold text-accent-soft-fg transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {suggesting ? "Asking Gemini…" : "Suggest a range (AI)"}
+              {suggesting ? "Asking Gemini…" : "Suggest range & description"}
             </button>
-            {!canSuggest && <p className="mt-1 text-xs text-subtle-fg">Fill in make, model, and model year first.</p>}
+            <p className="mt-1 text-xs text-subtle-fg">
+              {canSuggest
+                ? "Uses the vehicle details to draft a price range and a listing description."
+                : "Fill in make, model, and model year first."}
+            </p>
             {suggestError && <p role="alert" className="mt-2 text-sm font-semibold text-red-600">{suggestError}</p>}
             {suggestion && (
               <div className="mt-3 rounded-2xl border border-accent-soft-fg/30 bg-accent-soft p-4">
@@ -240,6 +183,11 @@ export function CreateListingForm() {
                 >
                   Use this range
                 </button>
+                {suggestion.description && (
+                  <p className="mt-3 border-t border-accent-soft-fg/20 pt-3 text-xs text-subtle-fg">
+                    A description draft is ready in <span className="font-semibold text-muted-fg">Listing basics</span> below — review and apply it there.
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -271,6 +219,75 @@ export function CreateListingForm() {
               onChange={(event) => setResponseIncrement(event.target.value)}
               required
               className="mt-2 w-full rounded-2xl border border-border-strong bg-surface px-4 py-3 text-fg outline-none focus:border-accent"
+            />
+          </label>
+        </div>
+      </div>
+
+      <div>
+        <h2 className="text-sm font-black uppercase tracking-wide text-subtle-fg">Listing basics</h2>
+        <p className="mt-1 text-xs text-subtle-fg">
+          Suggested from the details above — apply what you like, edit anything, or write your own.
+        </p>
+        <div className="mt-4 space-y-4">
+          <label className="block text-sm font-semibold text-body">
+            Title
+            <input
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              required
+              maxLength={200}
+              placeholder="e.g. 2021 Toyota Fortuner, Automatic"
+              className="mt-2 w-full rounded-2xl border border-border-strong bg-surface px-4 py-3 text-fg outline-none placeholder:text-subtle-fg focus:border-accent"
+            />
+            {titleSuggestion && (
+              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-accent-soft-fg/30 bg-accent-soft px-3 py-2">
+                <span className="text-xs text-muted-fg">
+                  Suggested: <span className="font-semibold text-fg">{titleSuggestion}</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setTitle(titleSuggestion)}
+                  className="rounded-lg bg-accent px-2.5 py-1 text-xs font-bold text-accent-fg transition hover:brightness-110"
+                >
+                  Apply
+                </button>
+              </div>
+            )}
+          </label>
+          <label className="block text-sm font-semibold text-body">
+            Description <span className="font-normal text-subtle-fg">(optional)</span>
+            <textarea
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              rows={4}
+              maxLength={4000}
+              className="mt-2 w-full resize-none rounded-2xl border border-border-strong bg-surface px-4 py-3 text-fg outline-none focus:border-accent"
+            />
+            {descriptionSuggestion && (
+              <div className="mt-2 rounded-xl border border-accent-soft-fg/30 bg-accent-soft px-3 py-2">
+                <p className="text-xs font-semibold text-muted-fg">
+                  {descriptionFromAi ? "AI draft" : "Suggested"}
+                </p>
+                <p className="mt-1 text-xs text-fg">{descriptionSuggestion}</p>
+                <button
+                  type="button"
+                  onClick={() => setDescription(descriptionSuggestion)}
+                  className="mt-2 rounded-lg bg-accent px-2.5 py-1 text-xs font-bold text-accent-fg transition hover:brightness-110"
+                >
+                  Apply
+                </button>
+              </div>
+            )}
+          </label>
+          <label className="block text-sm font-semibold text-body">
+            Location <span className="font-normal text-subtle-fg">(optional)</span>
+            <input
+              value={locationText}
+              onChange={(event) => setLocationText(event.target.value)}
+              maxLength={300}
+              placeholder="e.g. Bengaluru, Karnataka"
+              className="mt-2 w-full rounded-2xl border border-border-strong bg-surface px-4 py-3 text-fg outline-none placeholder:text-subtle-fg focus:border-accent"
             />
           </label>
         </div>

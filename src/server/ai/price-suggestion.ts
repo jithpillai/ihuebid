@@ -10,6 +10,10 @@ export type PriceSuggestion = {
   low: number;
   high: number;
   rationale: string;
+  // A short listing description written from the same facts, in the same
+  // call. Empty string if the model returned nothing usable — the form then
+  // falls back to its deterministic description suggestion.
+  description: string;
 };
 
 const RESPONSE_SCHEMA = {
@@ -18,11 +22,13 @@ const RESPONSE_SCHEMA = {
     low: { type: "number" },
     high: { type: "number" },
     rationale: { type: "string" },
+    description: { type: "string" },
   },
-  required: ["low", "high", "rationale"],
+  required: ["low", "high", "rationale", "description"],
 };
 
 const MAX_RATIONALE_LENGTH = 500;
+const MAX_DESCRIPTION_LENGTH = 1200;
 
 // Gemini's structured-output mode can't refuse to answer — given zero facts
 // it would still return a confident-looking number, indistinguishable from a
@@ -52,15 +58,16 @@ export function buildPriceSuggestionPrompt(input: PriceSuggestionInput): { promp
   const locationLine = input.locationText?.trim() ? `- Location: ${input.locationText.trim()}` : "";
 
   const prompt = [
-    "You are a pricing assistant for a used-vehicle resale marketplace in India.",
-    "Given the following vehicle facts, suggest a realistic resale price range for this exact vehicle in the current Indian used-vehicle market.",
-    "Be conservative and realistic — this is a rough starting-point estimate for a seller, not verified market data.",
+    "You are a listing assistant for a used-vehicle resale marketplace in India.",
+    "Given the following vehicle facts, do two things for this exact vehicle:",
+    "1. Suggest a realistic resale price range in the current Indian used-vehicle market. Be conservative and realistic — this is a rough starting-point estimate for a seller, not verified market data.",
+    "2. Write a clear, factual 2-4 sentence description suitable for a resale listing. Use ONLY the facts given below — do not invent features, condition, ownership history, or service records that aren't stated. Neutral tone, no marketing hype.",
     "",
     "Vehicle facts:",
     factLines,
     locationLine,
     "",
-    `Respond with a price range in ${input.currency} (numeric values only, no currency symbols or separators) and a one-sentence rationale.`,
+    `Respond with: a price range in ${input.currency} (numeric values only, no currency symbols or separators), a one-sentence rationale for the range, and the description.`,
   ].filter(Boolean).join("\n");
 
   return { prompt, responseSchema: RESPONSE_SCHEMA };
@@ -82,6 +89,9 @@ export function normalizePriceSuggestion(raw: unknown): PriceSuggestion {
   const rationale = typeof data.rationale === "string" && data.rationale.trim()
     ? data.rationale.trim().slice(0, MAX_RATIONALE_LENGTH)
     : "Estimate based on the vehicle facts provided.";
+  const description = typeof data.description === "string" && data.description.trim()
+    ? data.description.replace(/\s+/g, " ").trim().slice(0, MAX_DESCRIPTION_LENGTH)
+    : "";
 
-  return { low, high, rationale };
+  return { low, high, rationale, description };
 }

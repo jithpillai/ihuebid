@@ -4,12 +4,13 @@ import { buildPriceSuggestionPrompt, hasSufficientFactsForSuggestion, normalizeP
 
 describe("normalizePriceSuggestion", () => {
   it("passes through a well-formed suggestion", () => {
-    expect(normalizePriceSuggestion({ low: 400000, high: 500000, rationale: "Typical for this model and mileage." }))
-      .toEqual({ low: 400000, high: 500000, rationale: "Typical for this model and mileage." });
+    expect(normalizePriceSuggestion({ low: 400000, high: 500000, rationale: "Typical for this model and mileage.", description: "A 2021 Honda City." }))
+      .toEqual({ low: 400000, high: 500000, rationale: "Typical for this model and mileage.", description: "A 2021 Honda City." });
   });
 
   it("swaps low/high if the AI returned them reversed", () => {
-    expect(normalizePriceSuggestion({ low: 500000, high: 400000, rationale: "x" })).toEqual({ low: 400000, high: 500000, rationale: "x" });
+    expect(normalizePriceSuggestion({ low: 500000, high: 400000, rationale: "x", description: "y" }))
+      .toEqual({ low: 400000, high: 500000, rationale: "x", description: "y" });
   });
 
   it("falls back to a generic rationale when missing", () => {
@@ -17,20 +18,26 @@ describe("normalizePriceSuggestion", () => {
     expect(result.rationale).toBe("Estimate based on the vehicle facts provided.");
   });
 
-  it("caps an excessively long rationale", () => {
-    const result = normalizePriceSuggestion({ low: 400000, high: 500000, rationale: "x".repeat(1000) });
+  it("falls back to an empty description when missing or blank", () => {
+    expect(normalizePriceSuggestion({ low: 400000, high: 500000 }).description).toBe("");
+    expect(normalizePriceSuggestion({ low: 400000, high: 500000, description: "   " }).description).toBe("");
+  });
+
+  it("caps an excessively long rationale and description", () => {
+    const result = normalizePriceSuggestion({ low: 400000, high: 500000, rationale: "x".repeat(1000), description: "y".repeat(5000) });
     expect(result.rationale.length).toBe(500);
+    expect(result.description.length).toBe(1200);
   });
 
   it("throws on non-numeric or missing values", () => {
-    expect(() => normalizePriceSuggestion({ low: "a lot", high: 500000, rationale: "x" })).toThrow();
+    expect(() => normalizePriceSuggestion({ low: "a lot", high: 500000, rationale: "x", description: "y" })).toThrow();
     expect(() => normalizePriceSuggestion({})).toThrow();
     expect(() => normalizePriceSuggestion(null)).toThrow();
   });
 
   it("throws on non-positive values", () => {
-    expect(() => normalizePriceSuggestion({ low: -100, high: 500000, rationale: "x" })).toThrow();
-    expect(() => normalizePriceSuggestion({ low: 0, high: 500000, rationale: "x" })).toThrow();
+    expect(() => normalizePriceSuggestion({ low: -100, high: 500000, rationale: "x", description: "y" })).toThrow();
+    expect(() => normalizePriceSuggestion({ low: 0, high: 500000, rationale: "x", description: "y" })).toThrow();
   });
 });
 
@@ -57,6 +64,12 @@ describe("buildPriceSuggestionPrompt", () => {
     expect(prompt).toContain("Number of owners: 1");
     expect(prompt).toContain("Bengaluru");
     expect(prompt).not.toContain("SOME-SENSITIVE-VIN");
+  });
+
+  it("asks for both a price range and a description", () => {
+    const { prompt } = buildPriceSuggestionPrompt({ currency: "INR", fieldValues: { make: "Honda", model: "City", modelYear: "2020" } });
+    expect(prompt.toLowerCase()).toContain("price range");
+    expect(prompt.toLowerCase()).toContain("description");
   });
 
   it("omits fields that weren't filled in", () => {
