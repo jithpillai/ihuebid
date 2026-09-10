@@ -3,11 +3,9 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 
 import { AggregateResultPanel } from "@/components/aggregate-result-panel";
-import { BuyerInterestForm } from "@/components/buyer-interest-form";
-import { NotifyOptInForm } from "@/components/notify-optin-form";
+import { ListingResponseSection } from "@/components/listing-response-section";
 import { PendingLink } from "@/components/pending-link";
 import { ShareButton } from "@/components/share-button";
-import { ValuationForm } from "@/components/valuation-form";
 import { StatusPill } from "@/components/ui/pill";
 import { getCurrentSession } from "@/server/auth/session";
 import { canEditListing, getListingByPublicId } from "@/server/listings/listing-service";
@@ -259,40 +257,22 @@ export default async function PublicListingPage({ params }: Props) {
                   {currencyFormatter.format(Number(listing.responseMin))} – {currencyFormatter.format(Number(listing.responseMax))}
                 </span>
               </p>
-              {(listing.status === "LIVE" || isReadyToBuy) && (
-                <div className="mt-6">
-                  <BuyerInterestForm
-                    listingId={listing.id}
-                    status={listing.status}
-                    currency={listing.currency}
-                    min={Number(listing.responseMin)}
-                    max={Number(listing.responseMax)}
-                    increment={Number(listing.responseIncrement)}
-                    initialValue={existingValuation?.value ?? null}
-                    initialName={existingValuation?.contributorName ?? participantIdentity?.displayName ?? null}
-                    brandLabel={brandLabel}
-                    initiallyReadyToBuy={isReadyToBuy}
-                  />
-                </div>
-              )}
-              <div className="mt-6">
-                <ValuationForm
-                  listingId={listing.id}
-                  status={listing.status}
-                  currency={listing.currency}
-                  min={Number(listing.responseMin)}
-                  max={Number(listing.responseMax)}
-                  increment={Number(listing.responseIncrement)}
-                  initialValue={existingValuation?.value ?? null}
-                  initialName={existingValuation?.contributorName ?? participantIdentity?.displayName ?? null}
-                  initialAnonymous={existingValuation != null && existingValuation.contributorName === null}
-                />
-              </div>
-              {listing.status === "LIVE" && existingValuation !== null && !isReadyToBuy && (
-                <div className="mt-4">
-                  <NotifyOptInForm listingId={listing.id} initiallyOptedIn={notificationOptIn?.verifiedAt != null} />
-                </div>
-              )}
+              <ListingResponseSection
+                listingId={listing.id}
+                status={listing.status}
+                currency={listing.currency}
+                min={Number(listing.responseMin)}
+                max={Number(listing.responseMax)}
+                increment={Number(listing.responseIncrement)}
+                initialValue={existingValuation?.value ?? null}
+                initialName={existingValuation?.contributorName ?? participantIdentity?.displayName ?? null}
+                initialAnonymous={existingValuation != null && existingValuation.contributorName === null}
+                showBuyerInterest={listing.status === "LIVE" || isReadyToBuy}
+                brandLabel={brandLabel}
+                initiallyReadyToBuy={isReadyToBuy}
+                showNotifyOptIn={listing.status === "LIVE" && existingValuation !== null && !isReadyToBuy}
+                notifyInitiallyOptedIn={notificationOptIn?.verifiedAt != null}
+              />
             </div>
           )}
 

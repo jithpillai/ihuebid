@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useState, useTransition } from "react";
+import { FormEvent, useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
 import { PendingOverlay } from "@/components/pending-feedback";
@@ -21,6 +21,7 @@ export function BuyerInterestForm({
   initialName,
   brandLabel,
   initiallyReadyToBuy,
+  onOpenChange,
 }: {
   listingId: string;
   status: ListingStatus;
@@ -32,6 +33,10 @@ export function BuyerInterestForm({
   initialName: string | null;
   brandLabel: string;
   initiallyReadyToBuy: boolean;
+  // Fires true while the form is expanded (name/email/phone/code steps), false
+  // when it's just the button or the submitted banner — lets the parent hide
+  // the plain estimate slider while this form is capturing the estimate.
+  onOpenChange?: (open: boolean) => void;
 }) {
   const formatValue = useMemo(() => {
     const formatter = new Intl.NumberFormat("en-IN", { style: "currency", currency, maximumFractionDigits: 0 });
@@ -59,6 +64,11 @@ export function BuyerInterestForm({
   const [loading, setLoading] = useState(false);
   const [isPending, startTransition] = useTransition();
   const busy = loading || isPending;
+
+  const isOpen = step === "form" || step === "code";
+  useEffect(() => {
+    onOpenChange?.(isOpen);
+  }, [isOpen, onOpenChange]);
 
   const sharedNotice = `Your interest to buy and contact details have been shared with ${brandLabel} & team. This can't be undone.`;
 
