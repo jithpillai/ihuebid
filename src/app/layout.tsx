@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     default: "ihue Bid",
     template: "%s | ihue Bid",
   },
-  description: "Share an item, collect price opinions or offers, and understand its defensible fair-value range.",
+  description: "Publish a listing, let the crowd price it anonymously, and collect verified interested buyers — a defensible fair-value range and a list of people to call, from one link.",
   applicationName: "ihue Bid",
   icons: {
     icon: [
